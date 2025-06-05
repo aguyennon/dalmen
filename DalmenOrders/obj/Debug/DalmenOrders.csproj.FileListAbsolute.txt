@@ -1,0 +1,10 @@
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\bin\Debug\DalmenOrders.exe.config
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\bin\Debug\DalmenOrders.exe
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\bin\Debug\DalmenOrders.pdb
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.csproj.AssemblyReference.cache
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.Form1.resources
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.Properties.Resources.resources
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.csproj.GenerateResource.cache
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.csproj.CoreCompileInputs.cache
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.exe
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.pdb
