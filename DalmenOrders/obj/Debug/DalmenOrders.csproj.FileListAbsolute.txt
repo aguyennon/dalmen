@@ -8,3 +8,4 @@ C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.csproj.Ge
 C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.csproj.CoreCompileInputs.cache
 C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.exe
 C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.pdb
+C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.Form2.resources
