@@ -30,9 +30,9 @@ namespace DalmenOrders
 
         private void PopulateResults()
         {
-             lblLotResult.Text = "Lot #: " + _lotNumber;
-             lblDeligneResult.Text = "Déligné À: " + _deligne;
-             lblWasteResult.Text = "Total Waste: " + _result.TotalWaste.ToString();
+             lblLotResult.Text = "Lot #: \n" + _lotNumber;
+             lblDeligneResult.Text = "Déligné à: \n" + _deligne;
+             lblWasteResult.Text = "Total Waste: \n" + _result.TotalWaste.ToString();
 
              SetupDataGridViews();
              PopulateDataGridViews();

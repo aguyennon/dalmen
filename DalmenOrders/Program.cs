@@ -17,6 +17,20 @@ namespace DalmenOrders
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
+
+            InputForm inputForm = new InputForm();
+
+            if (inputForm.ShowDialog() == DialogResult.OK)
+            {
+                Form1 mainForm = new Form1();
+
+                if (inputForm.DataProcessed && inputForm.ProcessedCuts.Count > 0)
+                {
+                    mainForm.LoadProcessedCuts(inputForm.ProcessedCuts);
+                }
+                
+                Application.Run(mainForm);
+            }
         }
     }
 }

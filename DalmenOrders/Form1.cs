@@ -1,23 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
+using System.Data.OleDb;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using static DalmenOrders.Form1;
 
 namespace DalmenOrders
-{ 
+{
+
     public partial class Form1 : Form
     {
+
+
         private const double KERF = 4.0; // Measurements all in mm
         public Form1()
         {
             InitializeComponent();
         }
+
 
         private void btnOptimize_Click(object sender, EventArgs e)
         {
@@ -28,8 +30,8 @@ namespace DalmenOrders
 
             try
             {
-                // Collect values from tbxCutQTY1 thru tbxCutQTY8 and tbxCutLength1 thru tbxCutLength8 (all textboxes)
-                for (int i = 1; i <= 8; i++)
+                // Collect values from tbxCutQTY1 thru tbxCutQTY9 and tbxCutLength1 thru tbxCutLength9 
+                for (int i = 1; i <= 9; i++)
                 {
                     TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + i, true).FirstOrDefault();
                     TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + i, true).FirstOrDefault();
@@ -65,18 +67,18 @@ namespace DalmenOrders
             // How much stock there is
             int stockQty = 0;
             // How long each board is
-            double stockLength = 0;
+            double stockLength = 0; // double because 2 characters since we're talking about length here
 
             if (!double.TryParse(tbxStockLength.Text, out stockLength) || stockLength <= 0)
             {
                 MessageBox.Show("Stock Length must be a positive number.");
-                    return;
+                return;
             }
 
             if (!int.TryParse(tbxStockQTY.Text, out stockQty) || stockQty <= 0)
             {
                 MessageBox.Show("Stock Quantity must be a positive number.");
-                    return;
+                return;
             }
 
             // List created to keep track of all cut lengths
@@ -88,11 +90,11 @@ namespace DalmenOrders
                     allCuts.Add(cutLengths[i]);
                 }
             }
-         
+
             // To sort cuts in descending order aka longest first etc.
             allCuts.Sort((a, b) => b.CompareTo(a));
 
-            // Sort cut items by length descending (matching VBA)
+            // Sort cut items by length descending (just like VBA)
             cutItems = cutItems.OrderByDescending(x => x.Length).ToList();
 
             if (allCuts.Count > 0 && (allCuts[0] + KERF) > stockLength)
@@ -227,6 +229,87 @@ namespace DalmenOrders
             return result;
         }
 
+        public void LoadProcessedCuts(List<CutItem> processedCuts)
+        {
+            try
+            {
+                ClearAllCutInputs();
+
+                int maxCuts = Math.Min(processedCuts.Count, 9); // Limit to 9 cuts
+
+                for (int i = 0; i < maxCuts; i++)
+                {
+                    int textboxIndex = i + 1; // Textboxes are numbered 1-9
+
+                    TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + textboxIndex, true).FirstOrDefault();
+                    TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + textboxIndex, true).FirstOrDefault();
+
+                    if (qtyBox != null && lenBox != null)
+                    {
+                        qtyBox.Text = processedCuts[i].Quantity.ToString();
+                        lenBox.Text = processedCuts[i].Length.ToString();
+                    }
+                }
+
+                // If there are more than 9 unique cuts, show a warning
+                if (processedCuts.Count > 9)
+                {
+                    MessageBox.Show($"You have {processedCuts.Count} unique cuts, but only the first 9 have been loaded. " +
+                                  "The remaining cuts are:\n" +
+                                  string.Join("\n", processedCuts.Skip(9).Select(c => $"Length: {c.Length}, Qty: {c.Quantity}")),
+                                  "Too Many Cuts", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+
+                // Show success message
+                MessageBox.Show($"Successfully loaded {maxCuts} cut lengths into the optimizer!",
+                               "Cuts Loaded", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading processed cuts: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void HandleProcessedCuts(List<CutItem> processedCuts)
+        {
+            if (processedCuts == null || processedCuts.Count == 0)
+            {
+                MessageBox.Show("No valid cuts to process.");
+                return;
+            }
+
+            // Clear all 9 sets first
+            for (int i = 1; i <= 9; i++)
+            {
+                TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + i, true).FirstOrDefault();
+                TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + i, true).FirstOrDefault();
+
+                if (qtyBox != null) qtyBox.Clear();
+                if (lenBox != null) lenBox.Clear();
+            }
+
+            // Populate with new values
+            for (int i = 0; i < processedCuts.Count && i < 9; i++)
+            {
+                TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + (i + 1), true).FirstOrDefault();
+                TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + (i + 1), true).FirstOrDefault();
+
+                if (qtyBox != null) qtyBox.Text = processedCuts[i].Quantity.ToString();
+                if (lenBox != null) lenBox.Text = processedCuts[i].Length.ToString();
+            }
+        }
+
+        private void ClearAllCutInputs()
+        {
+            for (int i = 1; i <= 9; i++)
+            {
+                TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + i, true).FirstOrDefault();
+                TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + i, true).FirstOrDefault();
+                if (qtyBox != null) qtyBox.Clear();
+                if (lenBox != null) lenBox.Clear();
+            }
+        }
+
 
         private void btnExit_Click(object sender, EventArgs e)
         {
@@ -238,27 +321,65 @@ namespace DalmenOrders
 
         }
 
-        public class CutItem
+        private void btnOpen_Click(object sender, EventArgs e)
         {
-            public int Quantity { get; set; }
-            public double Length { get; set; }
-        }
+            string lotNumber = tbxLotNumber.Text.Trim();
+            if (string.IsNullOrEmpty(lotNumber))
+            {
+                MessageBox.Show("Please enter a Lot Number.");
+                return;
+            }
 
-        public class StockUsage
-        {
-            public int BoardNumber { get; set; }
-            public double StockLength { get; set; }
-            public double CutLength { get; set; }
-            public bool IsWaste { get; set; }
-        }
+            string dbPath = Path.Combine(@"Q:\Quotes\FichierDeScie\Soufflage", lotNumber + ".mdb");
 
-        public class OptimizationResult
-        {
-            public bool IsSuccess { get; set; }
-            public string ErrorMsg { get; set; }
-            public int TotalBoards { get; set; }
-            public double TotalWaste { get; set; }
-            public List<StockUsage> Usage { get; set; } = new List<StockUsage>();
+            if (!File.Exists(dbPath))
+            {
+                MessageBox.Show($"Database for Lot #{lotNumber} not found in Q:\\Quotes\\FichierDeScie\\Soufflage\\");
+                return;
+            }
+
+            List<CutItem> loadedCuts = new List<CutItem>();
+
+            try
+            {
+                string connStr = $@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source={dbPath};Persist Security Info=False;";
+                using (OleDbConnection conn = new OleDbConnection(connStr))
+                {
+                    conn.Open();
+                    using (OleDbCommand cmd = new OleDbCommand("SELECT Taille FROM Soufflage", conn)) // need POS_1
+                    using (OleDbDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            if (!reader.IsDBNull(0))
+                            {
+                                double len = Convert.ToDouble(reader["Taille"]);
+                                loadedCuts.Add(new CutItem { Quantity = 1, Length = len }); // Quantity defaulted to 1
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading data from database:\n" + ex.Message);
+                return;
+            }
+
+            using (InputForm inputForm = new InputForm())
+            {
+                inputForm.ProcessedCuts = loadedCuts;
+                inputForm.DataProcessed = true;
+                inputForm.InitializeCuts();
+
+                var result = inputForm.ShowDialog();
+
+                if (result == DialogResult.OK && inputForm.ProcessedCuts != null && inputForm.ProcessedCuts.Count > 0)
+                {
+                    HandleProcessedCuts(inputForm.ProcessedCuts);
+                }
+            }
+
         }
     }
 }
