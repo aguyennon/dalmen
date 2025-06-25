@@ -35,7 +35,7 @@ namespace DalmenOrders
             this.lblTitle = new System.Windows.Forms.Label();
             this.SuspendLayout();
 
-            // 
+           
             // lblTitle
             // 
             this.lblTitle.AutoSize = true;

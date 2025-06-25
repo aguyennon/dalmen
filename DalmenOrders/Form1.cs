@@ -354,7 +354,7 @@ namespace DalmenOrders
                             if (!reader.IsDBNull(0))
                             {
                                 double len = Convert.ToDouble(reader["Taille"]);
-                                loadedCuts.Add(new CutItem { Quantity = 1, Length = len }); // Quantity defaulted to 1
+                                loadedCuts.Add(new CutItem { Quantity = 1, Length = len }); 
                             }
                         }
                     }
