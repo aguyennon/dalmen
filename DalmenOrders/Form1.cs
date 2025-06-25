@@ -260,7 +260,7 @@ namespace DalmenOrders
                                   "Too Many Cuts", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
 
-                // Show success message
+            
                 MessageBox.Show($"Successfully loaded {maxCuts} cut lengths into the optimizer!",
                                "Cuts Loaded", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }

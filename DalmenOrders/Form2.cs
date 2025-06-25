@@ -147,10 +147,8 @@ namespace DalmenOrders
 
             dgv.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
         }
-    
 
          
-        private string stringToPrint="";
         private void btnPrint_Click(object sender, EventArgs e)
         {
             printResults.DocumentName = "Optimization Results - Lot #" + _lotNumber;
