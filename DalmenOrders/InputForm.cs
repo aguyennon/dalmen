@@ -209,7 +209,6 @@ namespace DalmenOrders
 
                 txtLengthInput.Text = sb.ToString();
             }
-            MessageBox.Show($"Received {ProcessedCuts.Count} cuts");
 
         }
 

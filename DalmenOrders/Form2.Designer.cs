@@ -38,6 +38,8 @@
             this.lblDeligneResult = new System.Windows.Forms.Label();
             this.dgv1to7 = new System.Windows.Forms.DataGridView();
             this.dgv8to13 = new System.Windows.Forms.DataGridView();
+            this.btnSecondDelignage = new System.Windows.Forms.Button();
+            this.btnExitOut = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgv1to7)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgv8to13)).BeginInit();
             this.SuspendLayout();
@@ -46,7 +48,7 @@
             // 
             this.lblBoard1.AutoSize = true;
             this.lblBoard1.Font = new System.Drawing.Font("Mongolian Baiti", 22.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblBoard1.Location = new System.Drawing.Point(272, -1);
+            this.lblBoard1.Location = new System.Drawing.Point(261, -1);
             this.lblBoard1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblBoard1.Name = "lblBoard1";
             this.lblBoard1.Size = new System.Drawing.Size(105, 31);
@@ -69,7 +71,7 @@
             // 
             this.lblLotResult.AutoSize = true;
             this.lblLotResult.Font = new System.Drawing.Font("Mongolian Baiti", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblLotResult.Location = new System.Drawing.Point(1, 321);
+            this.lblLotResult.Location = new System.Drawing.Point(1, 249);
             this.lblLotResult.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblLotResult.Name = "lblLotResult";
             this.lblLotResult.Size = new System.Drawing.Size(68, 20);
@@ -90,12 +92,12 @@
             // btnOk
             // 
             this.btnOk.BackColor = System.Drawing.SystemColors.InactiveCaption;
-            this.btnOk.Location = new System.Drawing.Point(23, 804);
-            this.btnOk.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnOk.Location = new System.Drawing.Point(17, 739);
+            this.btnOk.Margin = new System.Windows.Forms.Padding(2);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(107, 61);
             this.btnOk.TabIndex = 6;
-            this.btnOk.Text = "&OK";
+            this.btnOk.Text = "&Back";
             this.btnOk.UseVisualStyleBackColor = false;
             this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
             // 
@@ -106,8 +108,8 @@
             // btnPrint
             // 
             this.btnPrint.BackColor = System.Drawing.SystemColors.InactiveCaption;
-            this.btnPrint.Location = new System.Drawing.Point(11, 588);
-            this.btnPrint.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnPrint.Location = new System.Drawing.Point(5, 11);
+            this.btnPrint.Margin = new System.Windows.Forms.Padding(2);
             this.btnPrint.Name = "btnPrint";
             this.btnPrint.Size = new System.Drawing.Size(119, 65);
             this.btnPrint.TabIndex = 7;
@@ -119,7 +121,7 @@
             // 
             this.lblDeligneResult.AutoSize = true;
             this.lblDeligneResult.Font = new System.Drawing.Font("Mongolian Baiti", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblDeligneResult.Location = new System.Drawing.Point(1, 402);
+            this.lblDeligneResult.Location = new System.Drawing.Point(1, 319);
             this.lblDeligneResult.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblDeligneResult.Name = "lblDeligneResult";
             this.lblDeligneResult.Size = new System.Drawing.Size(103, 20);
@@ -129,24 +131,47 @@
             // dgv1to7
             // 
             this.dgv1to7.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgv1to7.Location = new System.Drawing.Point(145, 34);
-            this.dgv1to7.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.dgv1to7.Location = new System.Drawing.Point(163, 34);
+            this.dgv1to7.Margin = new System.Windows.Forms.Padding(2);
             this.dgv1to7.Name = "dgv1to7";
             this.dgv1to7.RowHeadersWidth = 51;
             this.dgv1to7.RowTemplate.Height = 24;
-            this.dgv1to7.Size = new System.Drawing.Size(305, 831);
+            this.dgv1to7.Size = new System.Drawing.Size(282, 831);
             this.dgv1to7.TabIndex = 9;
             // 
             // dgv8to13
             // 
             this.dgv8to13.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgv8to13.Location = new System.Drawing.Point(466, 34);
-            this.dgv8to13.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.dgv8to13.Margin = new System.Windows.Forms.Padding(2);
             this.dgv8to13.Name = "dgv8to13";
             this.dgv8to13.RowHeadersWidth = 51;
             this.dgv8to13.RowTemplate.Height = 24;
-            this.dgv8to13.Size = new System.Drawing.Size(303, 831);
+            this.dgv8to13.Size = new System.Drawing.Size(287, 831);
             this.dgv8to13.TabIndex = 10;
+            // 
+            // btnSecondDelignage
+            // 
+            this.btnSecondDelignage.BackColor = System.Drawing.SystemColors.InactiveCaption;
+            this.btnSecondDelignage.Location = new System.Drawing.Point(11, 426);
+            this.btnSecondDelignage.Name = "btnSecondDelignage";
+            this.btnSecondDelignage.Size = new System.Drawing.Size(113, 56);
+            this.btnSecondDelignage.TabIndex = 11;
+            this.btnSecondDelignage.Text = "Click Here For Second Delignage!";
+            this.btnSecondDelignage.UseVisualStyleBackColor = false;
+            this.btnSecondDelignage.Click += new System.EventHandler(this.btnSecondDelignage_Click_1);
+            // 
+            // btnExitOut
+            // 
+            this.btnExitOut.BackColor = System.Drawing.SystemColors.InactiveCaption;
+            this.btnExitOut.Location = new System.Drawing.Point(17, 804);
+            this.btnExitOut.Margin = new System.Windows.Forms.Padding(2);
+            this.btnExitOut.Name = "btnExitOut";
+            this.btnExitOut.Size = new System.Drawing.Size(107, 61);
+            this.btnExitOut.TabIndex = 12;
+            this.btnExitOut.Text = "E&xit";
+            this.btnExitOut.UseVisualStyleBackColor = false;
+            this.btnExitOut.Click += new System.EventHandler(this.btnExitOut_Click);
             // 
             // Form2
             // 
@@ -155,6 +180,8 @@
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.ClientSize = new System.Drawing.Size(838, 876);
             this.ControlBox = false;
+            this.Controls.Add(this.btnExitOut);
+            this.Controls.Add(this.btnSecondDelignage);
             this.Controls.Add(this.dgv8to13);
             this.Controls.Add(this.dgv1to7);
             this.Controls.Add(this.lblDeligneResult);
@@ -164,7 +191,7 @@
             this.Controls.Add(this.lblLotResult);
             this.Controls.Add(this.lblBoard2);
             this.Controls.Add(this.lblBoard1);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form2";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form2";
@@ -188,5 +215,7 @@
         private System.Windows.Forms.Label lblDeligneResult;
         private System.Windows.Forms.DataGridView dgv1to7;
         private System.Windows.Forms.DataGridView dgv8to13;
+        private System.Windows.Forms.Button btnSecondDelignage;
+        private System.Windows.Forms.Button btnExitOut;
     }
 }

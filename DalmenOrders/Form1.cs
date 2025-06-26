@@ -12,8 +12,6 @@ namespace DalmenOrders
 
     public partial class Form1 : Form
     {
-
-
         private const double KERF = 4.0; // Measurements all in mm
         public Form1()
         {
@@ -31,7 +29,7 @@ namespace DalmenOrders
             try
             {
                 // Collect values from tbxCutQTY1 thru tbxCutQTY9 and tbxCutLength1 thru tbxCutLength9 
-                for (int i = 1; i <= 9; i++)
+                for (int i = 1; i <= 12; i++)
                 {
                     TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + i, true).FirstOrDefault();
                     TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + i, true).FirstOrDefault();
@@ -103,6 +101,32 @@ namespace DalmenOrders
                 return;
             }
 
+            var primaryResult = OptimizeStock(cutItems, stockLength, stockQty);
+
+            if (!primaryResult.IsSuccess)
+            {
+                MessageBox.Show(primaryResult.ErrorMsg);
+                return;
+            }
+
+            string primaryDelignage = tbxDeligne.Text.Trim();
+            string secondaryDelignage = tbxDeligne2.Text.Trim();
+
+            OptimizationResult secondaryResult = null;
+            if (!string.IsNullOrEmpty(secondaryDelignage) && secondaryDelignage != primaryDelignage)
+            {
+                // Try to optimize with secondary delignage
+                secondaryResult = OptimizeStock(cutItems, stockLength, stockQty);
+                if (!secondaryResult.IsSuccess)
+                {
+                    MessageBox.Show(secondaryResult.ErrorMsg);
+                    return;
+                }
+
+                Form2 results_Form = new Form2(primaryResult, secondaryResult, tbxLotNumber.Text, primaryDelignage, secondaryDelignage);
+                results_Form.ShowDialog();
+            }
+
             List<List<double>> boardCuts = new List<List<double>>(); // stores cuts per board
             List<double> boardWaste = new List<double>(); // stores waste/remaining length
 
@@ -131,6 +155,40 @@ namespace DalmenOrders
 
             output.AppendLine();
             output.AppendLine("Total Waste: " + result.TotalWaste);
+
+            List<string> delignageValues = new List<string>();
+            if (!string.IsNullOrEmpty(tbxDeligne.Text))
+                delignageValues.Add(tbxDeligne.Text.Trim());
+            if (!string.IsNullOrEmpty(tbxDeligne2.Text))
+                delignageValues.Add(tbxDeligne2.Text.Trim());
+
+            if (delignageValues.Count == 0)
+                delignageValues.Add("");
+
+            MultiDelignageResult multiResult = new MultiDelignageResult
+            {
+                LotNumber = tbxLotNumber.Text
+            };
+
+            foreach (string delignage in delignageValues)
+            {
+                var result_ = OptimizeStock(cutItems, stockLength, stockQty);
+
+                if (result_.IsSuccess)  // Changed from !result_.IsSuccess
+                {
+                    multiResult.DelignageResults.Add(new DelignageOptimizationResult
+                    {
+                        DelignageValue = delignage,
+                        OptimizationResult = result_,
+                        CutsForThisDelignage = cutItems.ToList()
+                    });
+                }
+                else
+                {
+                    MessageBox.Show($"Error optimizing for delignage '{delignage}': {result_.ErrorMsg}");
+                    return;
+                }
+            }
 
             // Important to load Form2
             Form2 resultsForm = new Form2(result, tbxLotNumber.Text, tbxDeligne.Text);
@@ -235,11 +293,11 @@ namespace DalmenOrders
             {
                 ClearAllCutInputs();
 
-                int maxCuts = Math.Min(processedCuts.Count, 9); // Limit to 9 cuts
+                int maxCuts = Math.Min(processedCuts.Count, 12); // Limit to 12 cuts
 
                 for (int i = 0; i < maxCuts; i++)
                 {
-                    int textboxIndex = i + 1; // Textboxes are numbered 1-9
+                    int textboxIndex = i + 1; // Textboxes are numbered 1-12
 
                     TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + textboxIndex, true).FirstOrDefault();
                     TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + textboxIndex, true).FirstOrDefault();
@@ -251,12 +309,12 @@ namespace DalmenOrders
                     }
                 }
 
-                // If there are more than 9 unique cuts, show a warning
-                if (processedCuts.Count > 9)
+                // If there are more than 12 unique cuts, show a warning
+                if (processedCuts.Count > 12)
                 {
-                    MessageBox.Show($"You have {processedCuts.Count} unique cuts, but only the first 9 have been loaded. " +
+                    MessageBox.Show($"You have {processedCuts.Count} unique cuts, but only the first 12 have been loaded. " +
                                   "The remaining cuts are:\n" +
-                                  string.Join("\n", processedCuts.Skip(9).Select(c => $"Length: {c.Length}, Qty: {c.Quantity}")),
+                                  string.Join("\n", processedCuts.Skip(12).Select(c => $"Length: {c.Length}, Qty: {c.Quantity}")),
                                   "Too Many Cuts", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
 
@@ -278,8 +336,8 @@ namespace DalmenOrders
                 return;
             }
 
-            // Clear all 9 sets first
-            for (int i = 1; i <= 9; i++)
+            // Clear all 12 sets first
+            for (int i = 1; i <= 12; i++)
             {
                 TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + i, true).FirstOrDefault();
                 TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + i, true).FirstOrDefault();
@@ -289,7 +347,7 @@ namespace DalmenOrders
             }
 
             // Populate with new values
-            for (int i = 0; i < processedCuts.Count && i < 9; i++)
+            for (int i = 0; i < processedCuts.Count && i < 12; i++)
             {
                 TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + (i + 1), true).FirstOrDefault();
                 TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + (i + 1), true).FirstOrDefault();
@@ -301,7 +359,7 @@ namespace DalmenOrders
 
         private void ClearAllCutInputs()
         {
-            for (int i = 1; i <= 9; i++)
+            for (int i = 1; i <= 12; i++)
             {
                 TextBox qtyBox = (TextBox)this.Controls.Find("tbxCutQTY" + i, true).FirstOrDefault();
                 TextBox lenBox = (TextBox)this.Controls.Find("tbxCutLength" + i, true).FirstOrDefault();
@@ -309,7 +367,6 @@ namespace DalmenOrders
                 if (lenBox != null) lenBox.Clear();
             }
         }
-
 
         private void btnExit_Click(object sender, EventArgs e)
         {
@@ -339,6 +396,7 @@ namespace DalmenOrders
             }
 
             List<CutItem> loadedCuts = new List<CutItem>();
+            List<string> delignageValues = new List<string>();
 
             try
             {
@@ -346,7 +404,7 @@ namespace DalmenOrders
                 using (OleDbConnection conn = new OleDbConnection(connStr))
                 {
                     conn.Open();
-                    using (OleDbCommand cmd = new OleDbCommand("SELECT Taille FROM Soufflage", conn)) // need POS_1
+                    using (OleDbCommand cmd = new OleDbCommand("SELECT Taille, POS_1 FROM Soufflage ORDER BY IDENTIF, LIGNE", conn)) // need POS_1
                     using (OleDbDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
@@ -354,7 +412,10 @@ namespace DalmenOrders
                             if (!reader.IsDBNull(0))
                             {
                                 double len = Convert.ToDouble(reader["Taille"]);
+                                string delignage = reader.IsDBNull(1) ? "" : reader["POS_1"].ToString();
+
                                 loadedCuts.Add(new CutItem { Quantity = 1, Length = len }); 
+                                delignageValues.Add(delignage);
                             }
                         }
                     }
@@ -366,20 +427,67 @@ namespace DalmenOrders
                 return;
             }
 
-            using (InputForm inputForm = new InputForm())
+            var delignageGroups = delignageValues.GroupBy(d => d)
+                .Select(g => new { Delignage = g.Key, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .ToList();
+
+            StringBuilder delignageInfo = new StringBuilder();
+            delignageInfo.AppendLine("Delignage Values Found:");
+
+            foreach (var group in delignageGroups)
             {
-                inputForm.ProcessedCuts = loadedCuts;
-                inputForm.DataProcessed = true;
-                inputForm.InitializeCuts();
+                delignageInfo.AppendLine($"- {group.Delignage}: {group.Count} pieces");
+            }
+
+            if (delignageGroups.Count >= 1)
+            {
+                tbxDeligne.Text = delignageGroups[0].Delignage;
+
+
+                if (delignageGroups.Count > 1)
+                {
+                    tbxDeligne2.Text = delignageGroups[1].Delignage;
+
+                    delignageInfo.AppendLine();
+                    delignageInfo.AppendLine($"Primary delignage '{delignageGroups[0].Delignage}' tbxDeligne");
+                    delignageInfo.AppendLine($"Secondary delignage '{delignageGroups[1].Delignage}' tbxDeligne2");
+                }
+                else
+                {
+                    tbxDeligne2.Clear();
+                }
+            }
+            else
+            {
+                tbxDeligne.Clear();
+                tbxDeligne2.Clear();
+            }
+
+
+                using (InputForm inputForm = new InputForm())
+                {
+                    inputForm.ProcessedCuts = loadedCuts;
+                    inputForm.DataProcessed = true;
+                    inputForm.InitializeCuts();
 
                 var result = inputForm.ShowDialog();
 
-                if (result == DialogResult.OK && inputForm.ProcessedCuts != null && inputForm.ProcessedCuts.Count > 0)
+                if (result == DialogResult.OK)
                 {
-                    HandleProcessedCuts(inputForm.ProcessedCuts);
+                    if (inputForm.ProcessedCuts != null && inputForm.ProcessedCuts.Count > 0)
+                    {
+                        HandleProcessedCuts(inputForm.ProcessedCuts);
+                    }
                 }
-            }
+               
 
+            }
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Application.Exit(); // Ensure application exits cleanly
         }
     }
 }

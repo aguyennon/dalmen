@@ -29,10 +29,12 @@
         private void InitializeComponent()
         {
             this.gbxStock = new System.Windows.Forms.GroupBox();
+            this.tbxCutLength9 = new System.Windows.Forms.TextBox();
+            this.tbxCutQTY9 = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.textBox2 = new System.Windows.Forms.TextBox();
             this.lblOptionalDeligne = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.tbxDeligne2 = new System.Windows.Forms.TextBox();
             this.tbxCutLength8 = new System.Windows.Forms.TextBox();
             this.tbxCutQTY8 = new System.Windows.Forms.TextBox();
             this.tbxCutLength7 = new System.Windows.Forms.TextBox();
@@ -64,9 +66,13 @@
             this.label1 = new System.Windows.Forms.Label();
             this.btnExit = new System.Windows.Forms.Button();
             this.btnOpen = new System.Windows.Forms.Button();
-            this.tbxCutQTY9 = new System.Windows.Forms.TextBox();
-            this.tbxCutLength9 = new System.Windows.Forms.TextBox();
             this.pbxLogo = new System.Windows.Forms.PictureBox();
+            this.tbxCutQTY10 = new System.Windows.Forms.TextBox();
+            this.tbxCutQTY11 = new System.Windows.Forms.TextBox();
+            this.tbxCutQTY12 = new System.Windows.Forms.TextBox();
+            this.tbxCutLength10 = new System.Windows.Forms.TextBox();
+            this.tbxCutLength11 = new System.Windows.Forms.TextBox();
+            this.tbxCutLength12 = new System.Windows.Forms.TextBox();
             this.gbxStock.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbxLogo)).BeginInit();
             this.SuspendLayout();
@@ -74,12 +80,18 @@
             // gbxStock
             // 
             this.gbxStock.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            this.gbxStock.Controls.Add(this.tbxCutLength12);
+            this.gbxStock.Controls.Add(this.tbxCutLength11);
+            this.gbxStock.Controls.Add(this.tbxCutLength10);
+            this.gbxStock.Controls.Add(this.tbxCutQTY12);
+            this.gbxStock.Controls.Add(this.tbxCutQTY11);
+            this.gbxStock.Controls.Add(this.tbxCutQTY10);
             this.gbxStock.Controls.Add(this.tbxCutLength9);
             this.gbxStock.Controls.Add(this.tbxCutQTY9);
             this.gbxStock.Controls.Add(this.label2);
             this.gbxStock.Controls.Add(this.textBox2);
             this.gbxStock.Controls.Add(this.lblOptionalDeligne);
-            this.gbxStock.Controls.Add(this.textBox1);
+            this.gbxStock.Controls.Add(this.tbxDeligne2);
             this.gbxStock.Controls.Add(this.tbxCutLength8);
             this.gbxStock.Controls.Add(this.tbxCutQTY8);
             this.gbxStock.Controls.Add(this.tbxCutLength7);
@@ -109,13 +121,29 @@
             this.gbxStock.Controls.Add(this.tbxLotNumber);
             this.gbxStock.Font = new System.Drawing.Font("Microsoft YaHei", 10.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.gbxStock.Location = new System.Drawing.Point(76, 67);
-            this.gbxStock.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.gbxStock.Margin = new System.Windows.Forms.Padding(2);
             this.gbxStock.Name = "gbxStock";
-            this.gbxStock.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.gbxStock.Size = new System.Drawing.Size(539, 411);
+            this.gbxStock.Padding = new System.Windows.Forms.Padding(2);
+            this.gbxStock.Size = new System.Drawing.Size(534, 510);
             this.gbxStock.TabIndex = 0;
             this.gbxStock.TabStop = false;
             this.gbxStock.Text = "Input Stock Information";
+            // 
+            // tbxCutLength9
+            // 
+            this.tbxCutLength9.Location = new System.Drawing.Point(135, 293);
+            this.tbxCutLength9.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutLength9.Name = "tbxCutLength9";
+            this.tbxCutLength9.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutLength9.TabIndex = 33;
+            // 
+            // tbxCutQTY9
+            // 
+            this.tbxCutQTY9.Location = new System.Drawing.Point(20, 293);
+            this.tbxCutQTY9.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutQTY9.Name = "tbxCutQTY9";
+            this.tbxCutQTY9.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutQTY9.TabIndex = 32;
             // 
             // label2
             // 
@@ -130,7 +158,7 @@
             // textBox2
             // 
             this.textBox2.Location = new System.Drawing.Point(303, 124);
-            this.textBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.textBox2.Margin = new System.Windows.Forms.Padding(2);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(86, 27);
             this.textBox2.TabIndex = 30;
@@ -139,25 +167,25 @@
             // lblOptionalDeligne
             // 
             this.lblOptionalDeligne.AutoSize = true;
-            this.lblOptionalDeligne.Location = new System.Drawing.Point(415, 101);
+            this.lblOptionalDeligne.Location = new System.Drawing.Point(407, 103);
             this.lblOptionalDeligne.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblOptionalDeligne.Name = "lblOptionalDeligne";
-            this.lblOptionalDeligne.Size = new System.Drawing.Size(74, 19);
+            this.lblOptionalDeligne.Size = new System.Drawing.Size(112, 19);
             this.lblOptionalDeligne.TabIndex = 29;
-            this.lblOptionalDeligne.Text = "Optional";
+            this.lblOptionalDeligne.Text = "2e Delignage:";
             // 
-            // textBox1
+            // tbxDeligne2
             // 
-            this.textBox1.Location = new System.Drawing.Point(411, 124);
-            this.textBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(86, 27);
-            this.textBox1.TabIndex = 28;
+            this.tbxDeligne2.Location = new System.Drawing.Point(411, 124);
+            this.tbxDeligne2.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxDeligne2.Name = "tbxDeligne2";
+            this.tbxDeligne2.Size = new System.Drawing.Size(86, 27);
+            this.tbxDeligne2.TabIndex = 28;
             // 
             // tbxCutLength8
             // 
             this.tbxCutLength8.Location = new System.Drawing.Point(135, 262);
-            this.tbxCutLength8.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength8.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength8.Name = "tbxCutLength8";
             this.tbxCutLength8.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength8.TabIndex = 17;
@@ -165,7 +193,7 @@
             // tbxCutQTY8
             // 
             this.tbxCutQTY8.Location = new System.Drawing.Point(20, 262);
-            this.tbxCutQTY8.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY8.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY8.Name = "tbxCutQTY8";
             this.tbxCutQTY8.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY8.TabIndex = 16;
@@ -173,7 +201,7 @@
             // tbxCutLength7
             // 
             this.tbxCutLength7.Location = new System.Drawing.Point(135, 232);
-            this.tbxCutLength7.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength7.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength7.Name = "tbxCutLength7";
             this.tbxCutLength7.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength7.TabIndex = 15;
@@ -181,7 +209,7 @@
             // tbxCutQTY7
             // 
             this.tbxCutQTY7.Location = new System.Drawing.Point(20, 232);
-            this.tbxCutQTY7.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY7.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY7.Name = "tbxCutQTY7";
             this.tbxCutQTY7.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY7.TabIndex = 14;
@@ -189,7 +217,7 @@
             // tbxCutLength6
             // 
             this.tbxCutLength6.Location = new System.Drawing.Point(135, 202);
-            this.tbxCutLength6.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength6.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength6.Name = "tbxCutLength6";
             this.tbxCutLength6.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength6.TabIndex = 13;
@@ -197,7 +225,7 @@
             // tbxCutQTY6
             // 
             this.tbxCutQTY6.Location = new System.Drawing.Point(20, 202);
-            this.tbxCutQTY6.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY6.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY6.Name = "tbxCutQTY6";
             this.tbxCutQTY6.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY6.TabIndex = 12;
@@ -205,7 +233,7 @@
             // tbxCutLength5
             // 
             this.tbxCutLength5.Location = new System.Drawing.Point(135, 172);
-            this.tbxCutLength5.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength5.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength5.Name = "tbxCutLength5";
             this.tbxCutLength5.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength5.TabIndex = 11;
@@ -213,7 +241,7 @@
             // tbxCutQTY5
             // 
             this.tbxCutQTY5.Location = new System.Drawing.Point(20, 172);
-            this.tbxCutQTY5.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY5.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY5.Name = "tbxCutQTY5";
             this.tbxCutQTY5.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY5.TabIndex = 10;
@@ -221,7 +249,7 @@
             // tbxCutLength4
             // 
             this.tbxCutLength4.Location = new System.Drawing.Point(135, 142);
-            this.tbxCutLength4.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength4.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength4.Name = "tbxCutLength4";
             this.tbxCutLength4.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength4.TabIndex = 9;
@@ -229,7 +257,7 @@
             // tbxCutLength3
             // 
             this.tbxCutLength3.Location = new System.Drawing.Point(135, 112);
-            this.tbxCutLength3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength3.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength3.Name = "tbxCutLength3";
             this.tbxCutLength3.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength3.TabIndex = 6;
@@ -237,7 +265,7 @@
             // tbxCutLength2
             // 
             this.tbxCutLength2.Location = new System.Drawing.Point(135, 82);
-            this.tbxCutLength2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength2.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength2.Name = "tbxCutLength2";
             this.tbxCutLength2.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength2.TabIndex = 17;
@@ -245,7 +273,7 @@
             // tbxCutQTY4
             // 
             this.tbxCutQTY4.Location = new System.Drawing.Point(20, 142);
-            this.tbxCutQTY4.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY4.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY4.Name = "tbxCutQTY4";
             this.tbxCutQTY4.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY4.TabIndex = 7;
@@ -253,7 +281,7 @@
             // tbxCutQTY3
             // 
             this.tbxCutQTY3.Location = new System.Drawing.Point(20, 112);
-            this.tbxCutQTY3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY3.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY3.Name = "tbxCutQTY3";
             this.tbxCutQTY3.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY3.TabIndex = 5;
@@ -261,7 +289,7 @@
             // tbxCutQTY2
             // 
             this.tbxCutQTY2.Location = new System.Drawing.Point(20, 82);
-            this.tbxCutQTY2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY2.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY2.Name = "tbxCutQTY2";
             this.tbxCutQTY2.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY2.TabIndex = 3;
@@ -283,7 +311,7 @@
             this.btnOptimize.Font = new System.Drawing.Font("Microsoft YaHei", 22.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnOptimize.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
             this.btnOptimize.Location = new System.Drawing.Point(292, 177);
-            this.btnOptimize.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnOptimize.Margin = new System.Windows.Forms.Padding(2);
             this.btnOptimize.Name = "btnOptimize";
             this.btnOptimize.Size = new System.Drawing.Size(191, 128);
             this.btnOptimize.TabIndex = 22;
@@ -293,8 +321,8 @@
             // 
             // tbxStockLength
             // 
-            this.tbxStockLength.Location = new System.Drawing.Point(135, 359);
-            this.tbxStockLength.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxStockLength.Location = new System.Drawing.Point(135, 461);
+            this.tbxStockLength.Margin = new System.Windows.Forms.Padding(2);
             this.tbxStockLength.Name = "tbxStockLength";
             this.tbxStockLength.Size = new System.Drawing.Size(90, 27);
             this.tbxStockLength.TabIndex = 19;
@@ -303,7 +331,7 @@
             // lblStockLength
             // 
             this.lblStockLength.AutoSize = true;
-            this.lblStockLength.Location = new System.Drawing.Point(135, 336);
+            this.lblStockLength.Location = new System.Drawing.Point(135, 438);
             this.lblStockLength.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblStockLength.Name = "lblStockLength";
             this.lblStockLength.Size = new System.Drawing.Size(108, 19);
@@ -312,8 +340,8 @@
             // 
             // tbxStockQTY
             // 
-            this.tbxStockQTY.Location = new System.Drawing.Point(20, 359);
-            this.tbxStockQTY.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxStockQTY.Location = new System.Drawing.Point(20, 461);
+            this.tbxStockQTY.Margin = new System.Windows.Forms.Padding(2);
             this.tbxStockQTY.Name = "tbxStockQTY";
             this.tbxStockQTY.Size = new System.Drawing.Size(86, 27);
             this.tbxStockQTY.TabIndex = 18;
@@ -322,7 +350,7 @@
             // lblStockQTY
             // 
             this.lblStockQTY.AutoSize = true;
-            this.lblStockQTY.Location = new System.Drawing.Point(22, 336);
+            this.lblStockQTY.Location = new System.Drawing.Point(22, 438);
             this.lblStockQTY.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblStockQTY.Name = "lblStockQTY";
             this.lblStockQTY.Size = new System.Drawing.Size(86, 19);
@@ -332,7 +360,7 @@
             // tbxCutLength1
             // 
             this.tbxCutLength1.Location = new System.Drawing.Point(135, 52);
-            this.tbxCutLength1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutLength1.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutLength1.Name = "tbxCutLength1";
             this.tbxCutLength1.Size = new System.Drawing.Size(86, 27);
             this.tbxCutLength1.TabIndex = 2;
@@ -350,7 +378,7 @@
             // tbxCutQTY1
             // 
             this.tbxCutQTY1.Location = new System.Drawing.Point(20, 52);
-            this.tbxCutQTY1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxCutQTY1.Margin = new System.Windows.Forms.Padding(2);
             this.tbxCutQTY1.Name = "tbxCutQTY1";
             this.tbxCutQTY1.Size = new System.Drawing.Size(86, 27);
             this.tbxCutQTY1.TabIndex = 1;
@@ -368,7 +396,7 @@
             // tbxDeligne
             // 
             this.tbxDeligne.Location = new System.Drawing.Point(411, 76);
-            this.tbxDeligne.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxDeligne.Margin = new System.Windows.Forms.Padding(2);
             this.tbxDeligne.Name = "tbxDeligne";
             this.tbxDeligne.Size = new System.Drawing.Size(86, 27);
             this.tbxDeligne.TabIndex = 21;
@@ -386,7 +414,7 @@
             // tbxLotNumber
             // 
             this.tbxLotNumber.Location = new System.Drawing.Point(303, 76);
-            this.tbxLotNumber.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbxLotNumber.Margin = new System.Windows.Forms.Padding(2);
             this.tbxLotNumber.Name = "tbxLotNumber";
             this.tbxLotNumber.Size = new System.Drawing.Size(86, 27);
             this.tbxLotNumber.TabIndex = 20;
@@ -418,10 +446,10 @@
             this.btnExit.BackColor = System.Drawing.Color.SteelBlue;
             this.btnExit.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.btnExit.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.btnExit.Location = new System.Drawing.Point(627, 459);
-            this.btnExit.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnExit.Location = new System.Drawing.Point(614, 422);
+            this.btnExit.Margin = new System.Windows.Forms.Padding(2);
             this.btnExit.Name = "btnExit";
-            this.btnExit.Size = new System.Drawing.Size(64, 30);
+            this.btnExit.Size = new System.Drawing.Size(75, 155);
             this.btnExit.TabIndex = 23;
             this.btnExit.Text = "E&xit";
             this.btnExit.UseVisualStyleBackColor = false;
@@ -437,22 +465,6 @@
             this.btnOpen.UseVisualStyleBackColor = true;
             this.btnOpen.Click += new System.EventHandler(this.btnOpen_Click);
             // 
-            // tbxCutQTY9
-            // 
-            this.tbxCutQTY9.Location = new System.Drawing.Point(20, 293);
-            this.tbxCutQTY9.Margin = new System.Windows.Forms.Padding(2);
-            this.tbxCutQTY9.Name = "tbxCutQTY9";
-            this.tbxCutQTY9.Size = new System.Drawing.Size(86, 27);
-            this.tbxCutQTY9.TabIndex = 32;
-            // 
-            // tbxCutLength9
-            // 
-            this.tbxCutLength9.Location = new System.Drawing.Point(135, 293);
-            this.tbxCutLength9.Margin = new System.Windows.Forms.Padding(2);
-            this.tbxCutLength9.Name = "tbxCutLength9";
-            this.tbxCutLength9.Size = new System.Drawing.Size(86, 27);
-            this.tbxCutLength9.TabIndex = 33;
-            // 
             // pbxLogo
             // 
             this.pbxLogo.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -462,26 +474,75 @@
             this.pbxLogo.Location = new System.Drawing.Point(444, 0);
             this.pbxLogo.Margin = new System.Windows.Forms.Padding(2);
             this.pbxLogo.Name = "pbxLogo";
-            this.pbxLogo.Size = new System.Drawing.Size(166, 74);
+            this.pbxLogo.Size = new System.Drawing.Size(166, 78);
             this.pbxLogo.TabIndex = 29;
             this.pbxLogo.TabStop = false;
+            // 
+            // tbxCutQTY10
+            // 
+            this.tbxCutQTY10.Location = new System.Drawing.Point(20, 324);
+            this.tbxCutQTY10.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutQTY10.Name = "tbxCutQTY10";
+            this.tbxCutQTY10.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutQTY10.TabIndex = 34;
+            // 
+            // tbxCutQTY11
+            // 
+            this.tbxCutQTY11.Location = new System.Drawing.Point(20, 355);
+            this.tbxCutQTY11.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutQTY11.Name = "tbxCutQTY11";
+            this.tbxCutQTY11.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutQTY11.TabIndex = 35;
+            // 
+            // tbxCutQTY12
+            // 
+            this.tbxCutQTY12.Location = new System.Drawing.Point(20, 386);
+            this.tbxCutQTY12.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutQTY12.Name = "tbxCutQTY12";
+            this.tbxCutQTY12.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutQTY12.TabIndex = 36;
+            // 
+            // tbxCutLength10
+            // 
+            this.tbxCutLength10.Location = new System.Drawing.Point(135, 324);
+            this.tbxCutLength10.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutLength10.Name = "tbxCutLength10";
+            this.tbxCutLength10.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutLength10.TabIndex = 37;
+            // 
+            // tbxCutLength11
+            // 
+            this.tbxCutLength11.Location = new System.Drawing.Point(135, 355);
+            this.tbxCutLength11.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutLength11.Name = "tbxCutLength11";
+            this.tbxCutLength11.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutLength11.TabIndex = 38;
+            // 
+            // tbxCutLength12
+            // 
+            this.tbxCutLength12.Location = new System.Drawing.Point(135, 386);
+            this.tbxCutLength12.Margin = new System.Windows.Forms.Padding(2);
+            this.tbxCutLength12.Name = "tbxCutLength12";
+            this.tbxCutLength12.Size = new System.Drawing.Size(86, 27);
+            this.tbxCutLength12.TabIndex = 39;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.ClientSize = new System.Drawing.Size(700, 499);
+            this.ClientSize = new System.Drawing.Size(700, 588);
             this.Controls.Add(this.btnOpen);
             this.Controls.Add(this.pbxLogo);
             this.Controls.Add(this.btnExit);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.lblTitleEng);
             this.Controls.Add(this.gbxStock);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Dalmen ";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.gbxStock.ResumeLayout(false);
             this.gbxStock.PerformLayout();
@@ -526,12 +587,18 @@
         private System.Windows.Forms.Button btnExit;
         private System.Windows.Forms.PictureBox pbxLogo;
         private System.Windows.Forms.Label lblOptionalDeligne;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox tbxDeligne2;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.Button btnOpen;
         private System.Windows.Forms.TextBox tbxCutLength9;
         private System.Windows.Forms.TextBox tbxCutQTY9;
+        private System.Windows.Forms.TextBox tbxCutLength12;
+        private System.Windows.Forms.TextBox tbxCutLength11;
+        private System.Windows.Forms.TextBox tbxCutLength10;
+        private System.Windows.Forms.TextBox tbxCutQTY12;
+        private System.Windows.Forms.TextBox tbxCutQTY11;
+        private System.Windows.Forms.TextBox tbxCutQTY10;
     }
 }
 

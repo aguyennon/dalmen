@@ -28,4 +28,32 @@ namespace DalmenOrders
         public double TotalWaste { get; set; }
         public List<StockUsage> Usage { get; set; } = new List<StockUsage>();
     }
+
+    public class CutItemWithDelignage : CutItem
+    {
+        public string Delignage { get; set; } 
+        public int OrderSequence { get; set; } 
+    }
+
+    public class DelignageGroup
+    {
+        public string DelignageValue { get; set; }
+        public List<CutItem> Cuts { get; set; } = new List<CutItem>();
+        public int TotalPieces { get; set; }
+        public double TotalLength { get; set; }
+    }
+    public class DelignageOptimizationResult
+    {
+        public string DelignageValue { get; set; }
+        public OptimizationResult OptimizationResult { get; set; }
+        public List<CutItem> CutsForThisDelignage { get; set; }
+    }
+
+    public class MultiDelignageResult
+    {
+        public List<DelignageOptimizationResult> DelignageResults { get; set; } = new List<DelignageOptimizationResult>();
+        public string LotNumber { get; set; }
+        public bool HasMultipleDelignage => DelignageResults.Count > 1;
+    }
+
 }

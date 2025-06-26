@@ -9,16 +9,20 @@ C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.csproj.Co
 C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.exe
 C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.pdb
 C:\Users\xocio\Downloads\repo4work\DalmenOrders\obj\Debug\DalmenOrders.Form2.resources
-C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\DalmenOrders.exe.config
-C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\DalmenOrders.exe
-C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\DalmenOrders.pdb
 C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.csproj.AssemblyReference.cache
-C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.exe.config
 C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.Form1.resources
 C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.Form2.resources
 C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.InputForm.resources
 C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.Properties.Resources.resources
 C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.csproj.GenerateResource.cache
 C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.csproj.CoreCompileInputs.cache
-C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.exe
-C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\DalmenOrders.pdb
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\Dalmen Orders App.exe.config
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\Dalmen Orders App.exe.manifest
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\Dalmen Orders App.application
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\Dalmen Orders App.exe
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Debug\Dalmen Orders App.pdb
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\Dalmen Orders App.exe.manifest
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\Dalmen Orders App.application
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\Dalmen Orders App.exe
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\Dalmen Orders App.pdb
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Debug\Dalmen Orders App.exe.config
