@@ -157,12 +157,6 @@ namespace DalmenOrders
             dgv.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
         }
 
-        private void btnPrint_Click(object sender, EventArgs e)
-        {
-            printResults.DocumentName = "Optimization Results - Lot #" + _lotNumber;
-            printResults.Print();
-        }
-
         // For the 2nd delignage results, need to make it so it prints the popup form, not the Form2
         private void printResults_PrintPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
         {

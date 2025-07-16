@@ -109,9 +109,6 @@ namespace DalmenOrders
                 return;
             }
 
-            string primaryDelignage = tbxDeligne.Text.Trim();
-            string secondaryDelignage = tbxDeligne2.Text.Trim();
-
             OptimizationResult secondaryResult = null;
             if (!string.IsNullOrEmpty(secondaryDelignage) && secondaryDelignage != primaryDelignage)
             {
@@ -137,20 +134,6 @@ namespace DalmenOrders
             {
                 MessageBox.Show(result.ErrorMsg);
                 return;
-            }
-
-            // Format and display results matching VBA output
-            StringBuilder output = new StringBuilder();
-            output.AppendLine("DÉLIGNÉ À: " + tbxDeligne.Text);
-            output.AppendLine("Lot #: " + tbxLotNumber.Text);
-            output.AppendLine("Total Boards = " + result.TotalBoards);
-            output.AppendLine();
-            output.AppendLine("Board No.\tStock Length\tCut Length");
-
-            foreach (var usage in result.Usage)
-            {
-                string cutDisplay = usage.IsWaste ? usage.CutLength + " Waste" : usage.CutLength.ToString();
-                output.AppendLine($"{usage.BoardNumber}\t\t{usage.StockLength}\t\t{cutDisplay}");
             }
 
             output.AppendLine();
@@ -396,7 +379,7 @@ namespace DalmenOrders
             }
 
             List<CutItem> loadedCuts = new List<CutItem>();
-            List<string> delignageValues = new List<string>();
+            _loadedCutsWithDelignage = new List<CutItemWithDelignage>(); // Initialize the delignage list
 
             try
             {
@@ -444,11 +427,9 @@ namespace DalmenOrders
             {
                 tbxDeligne.Text = delignageGroups[0].Delignage;
 
-
                 if (delignageGroups.Count > 1)
                 {
                     tbxDeligne2.Text = delignageGroups[1].Delignage;
-
                     delignageInfo.AppendLine();
                     delignageInfo.AppendLine($"Primary delignage '{delignageGroups[0].Delignage}' tbxDeligne");
                     delignageInfo.AppendLine($"Secondary delignage '{delignageGroups[1].Delignage}' tbxDeligne2");
@@ -463,7 +444,6 @@ namespace DalmenOrders
                 tbxDeligne.Clear();
                 tbxDeligne2.Clear();
             }
-
 
                 using (InputForm inputForm = new InputForm())
                 {
@@ -480,8 +460,6 @@ namespace DalmenOrders
                         HandleProcessedCuts(inputForm.ProcessedCuts);
                     }
                 }
-               
-
             }
         }
 
