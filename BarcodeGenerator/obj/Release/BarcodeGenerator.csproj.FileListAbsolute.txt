@@ -1,0 +1,15 @@
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\bin\Release\BarcodeGenerator.exe.config
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\bin\Release\BarcodeGenerator.exe
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\bin\Release\BarcodeGenerator.pdb
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\bin\Release\zxing.dll
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\bin\Release\zxing.presentation.dll
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\bin\Release\zxing.xml
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\bin\Release\zxing.presentation.xml
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeGenerator.csproj.AssemblyReference.cache
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeGenerator.Form1.resources
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeGenerator.Properties.Resources.resources
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeGenerator.csproj.GenerateResource.cache
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeGenerator.csproj.CoreCompileInputs.cache
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeG.154EB750.Up2Date
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeGenerator.exe
+C:\Users\alexis\source\repos\dalmen\BarcodeGenerator\obj\Release\BarcodeGenerator.pdb

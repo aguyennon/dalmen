@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MobileScanner.MainPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Barcode Scanner">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Row 0: camera UI -->
+        <VerticalStackLayout Padding="30" Spacing="20" Grid.Row="0">
+            <Button Text="Take Photo" Clicked="OnTakePhotoClicked"/>
+            <Image x:Name="PhotoResult" HeightRequest="300"/>
+        </VerticalStackLayout>
+
+        <!-- Row 1: the rest of your page in a ScrollView -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="25" Padding="30,0" VerticalOptions="Center">
+
+            <Image Source="dotnet_bot.png"
+                   SemanticProperties.Description="Inventory scanner app logo"
+                   HeightRequest="150"
+                   HorizontalOptions="Center" />
+
+            <Label x:Name="WelcomeLabel"
+                   Text="Welcome to Inventory Scanner"
+                   SemanticProperties.HeadingLevel="Level1"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="Black" />
+
+                <Label x:Name="StatusLabel"
+                   Text="Please login to your Microsoft account to access Excel"
+                   FontSize="16"
+                   HorizontalOptions="Center"
+                   TextColor="Gray"
+                   HorizontalTextAlignment="Center"
+                   Margin="10,0" />
+
+
+
+                <Button x:Name="ScanButton"
+                    Text=" Start Scanning Barcodes"
+                    Clicked="ScanButton_Clicked"
+                    HorizontalOptions="Center"
+                    BackgroundColor="#107C10"
+                    TextColor="White"
+                    FontSize="16"
+                    Padding="20,10"
+                    CornerRadius="5"
+                    MinimumWidthRequest="200"
+                    IsVisible="False" />
+
+            <StackLayout x:Name="UserInfoPanel" 
+                         IsVisible="False" 
+                         Spacing="10" 
+                         Margin="0,20,0,0">
+
+                    <Border BackgroundColor="LightBlue" 
+                        Padding="15" 
+                        StrokeShape="RoundRectangle 10"
+                        StrokeThickness="0"
+                        Margin="0,0,0,0">
+                        <StackLayout>
+                            <Label Text="✅ Successfully Logged In" 
+                            FontAttributes="Bold" 
+                            TextColor="DarkBlue"
+                            HorizontalOptions="Center" />
+                            <Label x:Name="UserNameLabel" 
+                        Text="User: [username]" 
+                        FontSize="14"
+                        TextColor="DarkBlue"
+                        HorizontalOptions="Center" />
+                        </StackLayout>
+                    </Border>
+
+            </StackLayout>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator x:Name="LoadingIndicator"
+                             IsVisible="False"
+                             IsRunning="False"
+                             Color="#0078D4"
+                             VerticalOptions="Center" />
+
+            <!-- Instructions -->
+                <Border BackgroundColor="LightGray" 
+                Padding="15" 
+                StrokeShape="RoundRectangle 8"
+                StrokeThickness="0"
+                Margin="0,20,0,0">
+                    <StackLayout>
+                        <Label Text="📋 Instructions:" 
+                    FontAttributes="Bold" 
+                    FontSize="16"
+                    TextColor="Black" />
+                        <Label FontSize="14" TextColor="LightBlue">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="1. Login with your Microsoft account" />
+                                    <Span Text="&#x0a;2. Ensure 'scanthermos.xlsx' is in your OneDrive" />
+                                    <Span Text="&#x0a;3. Start scanning Code 128 barcodes" />
+                                    <Span Text="&#x0a;4. Scans will be added to the 'Scans' worksheet" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </StackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

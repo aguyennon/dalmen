@@ -1,0 +1,14 @@
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\bin\Release\PurchaseOrder.exe.config
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\bin\Release\PurchaseOrder.exe.manifest
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\bin\Release\PurchaseOrder.application
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\bin\Release\PurchaseOrder.exe
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\bin\Release\PurchaseOrder.pdb
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.csproj.AssemblyReference.cache
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.Form1.resources
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.Properties.Resources.resources
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.csproj.GenerateResource.cache
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.csproj.CoreCompileInputs.cache
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.exe.manifest
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.application
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.exe
+C:\Users\alexis\source\repos\dalmen\PurchaseOrder\obj\Release\PurchaseOrder.pdb

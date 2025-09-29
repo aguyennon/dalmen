@@ -1,0 +1,11 @@
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\bin\Debug\TickSliderBar.exe.config
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\bin\Debug\TickSliderBar.exe
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\bin\Debug\TickSliderBar.pdb
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.csproj.AssemblyReference.cache
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.Form1.resources
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.Properties.Resources.resources
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.csproj.GenerateResource.cache
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.csproj.CoreCompileInputs.cache
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.exe
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.pdb
+C:\Users\alexis\source\repos\dalmen\TickSliderBar\obj\Debug\TickSliderBar.exe.config

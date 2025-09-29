@@ -5,13 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DalmenOrders
+
+#region GettersAndSetters
 {
+    // A whole bunch of getters and setters for the cut items and optimization results
     public class CutItem
     {
         public int Quantity { get; set; }
         public double Length { get; set; }
+        public bool IsGroupCut { get; set; } // Indicates if this cut is part of a group cut
+        public int OriginalQuantity { get; set; } // Original quantity before grouping
     }
-
+    // For this one, a simple class was used to represent the usage of stock in the optimization process.
     public class StockUsage
     {
         public int BoardNumber { get; set; }
@@ -19,41 +24,14 @@ namespace DalmenOrders
         public double CutLength { get; set; }
         public bool IsWaste { get; set; }
     }
-
+    // For this one, a class was created to represent the result of the optimization process
     public class OptimizationResult
     {
         public bool IsSuccess { get; set; }
         public string ErrorMsg { get; set; }
         public int TotalBoards { get; set; }
-        public double TotalWaste { get; set; }
+        public double TotalWaste { get; set; } // Possibly try to reuse some of the waste in future cuts
         public List<StockUsage> Usage { get; set; } = new List<StockUsage>();
     }
-
-    public class CutItemWithDelignage : CutItem
-    {
-        public string Delignage { get; set; } 
-        public int OrderSequence { get; set; } 
-    }
-
-    public class DelignageGroup
-    {
-        public string DelignageValue { get; set; }
-        public List<CutItem> Cuts { get; set; } = new List<CutItem>();
-        public int TotalPieces { get; set; }
-        public double TotalLength { get; set; }
-    }
-    public class DelignageOptimizationResult
-    {
-        public string DelignageValue { get; set; }
-        public OptimizationResult OptimizationResult { get; set; }
-        public List<CutItem> CutsForThisDelignage { get; set; }
-    }
-
-    public class MultiDelignageResult
-    {
-        public List<DelignageOptimizationResult> DelignageResults { get; set; } = new List<DelignageOptimizationResult>();
-        public string LotNumber { get; set; }
-        public bool HasMultipleDelignage => DelignageResults.Count > 1;
-    }
-
 }
+#endregion

@@ -12,9 +12,11 @@ namespace DalmenOrders
 {
     public partial class InputForm : Form
     {
+        // Get + Setters for processed cuts
         public List<CutItem> ProcessedCuts { get; set; }
         public bool DataProcessed { get; set; }
 
+        // Path to find the database in File Explorer
         private readonly string DatabaseFolderPath = @"Q:\Quotes\FichierDeScie\Soufflage";
         private readonly string DatabaseExtension = ".mdb";
 
@@ -36,7 +38,7 @@ namespace DalmenOrders
             this.SuspendLayout();
 
            
-            // lblTitle
+            // Settings for the lblTitle
             this.lblTitle.AutoSize = true;
             this.lblTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTitle.Location = new System.Drawing.Point(12, 9);
@@ -46,7 +48,7 @@ namespace DalmenOrders
             this.lblTitle.Text = "Dalmen Cut List Processor";
 
             // 
-            // lblInstructions
+            // Settings for the lblInstructions
             // 
             this.lblInstructions.AutoSize = true;
             this.lblInstructions.Location = new System.Drawing.Point(12, 40);
@@ -56,7 +58,7 @@ namespace DalmenOrders
             this.lblInstructions.Text = "Paste or enter your cut lengths below (one per line):\r\nThe system will automatically count duplicates and sort by length.";
 
             // 
-            // txtLengthInput
+            // Settings for the txtLengthInput
             // 
             this.txtLengthInput.Font = new System.Drawing.Font("Consolas", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtLengthInput.Location = new System.Drawing.Point(12, 80);
@@ -65,10 +67,9 @@ namespace DalmenOrders
             this.txtLengthInput.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtLengthInput.Size = new System.Drawing.Size(460, 250);
             this.txtLengthInput.TabIndex = 2;
-            // this.txtLengthInput.Text = "Example:\r\n2400\r\n1800\r\n2400\r\n1200\r\n1800\r\n2400";
 
             // 
-            // btnProcess
+            // Settings for the btnProcess
             // 
             this.btnProcess.BackColor = System.Drawing.Color.SteelBlue;
             this.btnProcess.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -82,7 +83,7 @@ namespace DalmenOrders
             this.btnProcess.Click += new System.EventHandler(this.btnProcess_Click);
 
             // 
-            // btnCancel
+            // Settings for the btnCancel
             // 
             this.btnCancel.Location = new System.Drawing.Point(390, 350);
             this.btnCancel.Name = "btnCancel";
@@ -93,7 +94,7 @@ namespace DalmenOrders
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
 
             // 
-            // InputForm
+            // Settings for the pop up InputForm itself after clicking open on the main form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -122,6 +123,7 @@ namespace DalmenOrders
             this.Text = "Cut Length Input - Dalmen";
         }
 
+        // To call them
         private System.Windows.Forms.TextBox txtLengthInput;
         private System.Windows.Forms.Button btnProcess;
         private System.Windows.Forms.Button btnCancel;
@@ -129,7 +131,7 @@ namespace DalmenOrders
         private System.Windows.Forms.Label lblTitle;
 
 
-
+        // Settings for what should happen once the process button is clicked
         private void btnProcess_Click(object sender, EventArgs e)
         {
             try
@@ -137,7 +139,7 @@ namespace DalmenOrders
                 // Get all lines from the textbox
                 string[] lines = txtLengthInput.Text.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-                // Parse lengths, skip non-numeric lines
+                // Parse lengths, skip non-numeric lines because they would be deemed useless here
                 List<double> allLengths = new List<double>();
                 foreach (string line in lines)
                 {
@@ -191,12 +193,14 @@ namespace DalmenOrders
             }
         }
 
+        // Settings for what should happen once the cancel button is clicked
         private void btnCancel_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
 
+        // Settings for what should happen once the InputForm is loaded
         private void InputForm_Load(object sender, EventArgs e)
         {
             if (DataProcessed && ProcessedCuts != null && ProcessedCuts.Count > 0)
@@ -212,6 +216,7 @@ namespace DalmenOrders
 
         }
 
+        // Method to initialize cuts in the textbox when the form is loaded or when needed
         public void InitializeCuts()
         {
             if (DataProcessed && ProcessedCuts != null && ProcessedCuts.Count > 0)

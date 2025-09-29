@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MobileScanner.Views.ScanPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
+             Title="Barcode Scanner">
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="15">
+
+            <!-- Title -->
+            <Label Text="BARCODE SCANNER" 
+                   FontSize="24" 
+                   FontAttributes="Bold" 
+                   HorizontalOptions="Center"
+                   TextColor="LightBlue"
+                   Margin="0,0,0,10" />
+
+            <!-- Main Content Grid -->
+            <Grid RowSpacing="15" ColumnSpacing="15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Camera View in Border -->
+                <Border Grid.Row="0" Grid.Column="0"
+                        Stroke="White"
+                        BackgroundColor="Black"
+                        StrokeShape="RoundRectangle 10"
+                        StrokeThickness="2"
+                        Padding="5"
+                        HeightRequest="250">
+                    <zxing:CameraBarcodeReaderView x:Name="CameraView"
+                                   IsDetecting="True"
+                                   BarcodesDetected="CameraView_BarcodesDetected"
+                                   Grid.Row="0" />
+                </Border>
+
+                <!-- Side Buttons -->
+                <StackLayout Grid.Row="0" Grid.Column="1" 
+                            Spacing="10"
+                            VerticalOptions="Center">
+
+                    <!-- Barcode Entry Display -->
+                    <Border BackgroundColor="LightBlue"
+                            StrokeShape="RoundRectangle 5"
+                            StrokeThickness="1"
+                            Padding="8">
+                        <Label Text="Code:" 
+                               FontSize="12" 
+                               FontAttributes="Bold"
+                               TextColor="DarkBlue"
+                               HorizontalOptions="Center" />
+                    </Border>
+
+                    <Entry x:Name="BarcodeEntry"
+                           Placeholder="                    SCANNED CODE WILL SHOW HERE"
+                           FontSize="14"
+                           IsReadOnly="True"
+                           HeightRequest="40"
+                           BackgroundColor="White"
+                           TextColor="Black" />
+
+                    <Button x:Name="NextButton"
+                        Text="START GROUP SCANS"
+                        Clicked="OnNextClicked"
+                        BackgroundColor="Green"
+                        TextColor="White"
+                        FontSize="14"
+                         />
+
+                    <Button x:Name="ScanCopyButton"
+                        Text="COPY TO CLIPBOARD"
+                        Clicked="OnCopyClicked"
+                        BackgroundColor="Green"
+                        TextColor="White"
+                        FontSize="14"
+                        Padding="15,8"
+                        CornerRadius="5"
+                        MinimumWidthRequest="140"
+                        IsEnabled="False" />
+
+                    <Button x:Name="ClearButton"
+                            Text="CLEAR"
+                            Clicked="OnClearClicked"
+                            BackgroundColor="#DC3545"
+                            TextColor="White"
+                            FontSize="12"
+                            HeightRequest="35"
+                            CornerRadius="5"
+                            IsEnabled="False" />
+                </StackLayout>
+
+                <!-- Bottom Action Buttons Row 1 -->
+                <StackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
+                            HorizontalOptions="Center"
+                            Spacing="10">
+
+                    <Button x:Name="GroupHistoryButton"
+                            Text="GROUP HISTORY"
+                            Clicked="OnGroupHistoryClicked"
+                            BackgroundColor="DarkGreen"
+                            TextColor="White"
+                            FontSize="12"
+                            Padding="12,6"
+                            CornerRadius="5"
+                            MinimumWidthRequest="80" />
+
+                    <Button x:Name="TorchButton"
+                            Text="FLASHLIGHT"
+                            Clicked="OnTorchClicked"
+                            BackgroundColor="Firebrick"
+                            TextColor="White"
+                            FontSize="12"
+                            Padding="12,6"
+                            CornerRadius="5"
+                            MinimumWidthRequest="80" />     
+
+                    <Button x:Name="HistoryButton"
+                            Text="HISTORY"
+                            Clicked="OnHistoryClicked"
+                            BackgroundColor="DarkBlue"
+                            TextColor="White"
+                            FontSize="12"
+                            Padding="12,6"
+                            CornerRadius="5"
+                            MinimumWidthRequest="80" />
+
+                    <Button x:Name="CreatePdfButton"
+                            Text="To PDF"
+                            Clicked="OnCreatePdfClicked"
+                            HorizontalOptions="Center"
+                            BackgroundColor="#0078D4"
+                            TextColor="White"
+                            FontSize="16"
+                            Padding="20,10"
+                            CornerRadius="5"
+                            MinimumWidthRequest="200" />
+
+
+
+
+                </StackLayout>
+
+                <!-- Bottom Action Buttons Row 2 -->
+                <StackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
+                            HorizontalOptions="Center"
+                            Spacing="10">
+
+                    <Button x:Name="CopyGroupHistoryButton"
+                            Text="COPY GROUP HISTORY"
+                            Clicked="OnCopyGroupHistoryClicked"
+                            BackgroundColor="SeaGreen"
+                            TextColor="White"
+                            FontSize="12"
+                            Padding="12,6"
+                            CornerRadius="5"
+                            MinimumWidthRequest="100" />
+
+                    <Button x:Name="CopyAllButton"
+                            Text="COPY HISTORY"
+                            Clicked="OnCopyAllClicked"
+                            BackgroundColor="Blue"
+                            TextColor="White" />
+
+                    <Button x:Name="SendToExcel"
+                            Text="To Excel"
+                            Clicked="OnSendExcelClicked"
+                            BackgroundColor="Green"
+                            TextColor="White" />
+
+
+
+
+                </StackLayout>
+            </Grid>
+
+            <!-- Status Label -->
+            <Border BackgroundColor="Black"
+                    StrokeShape="RoundRectangle 5"
+                    StrokeThickness="1"
+                    Padding="10"
+                    Margin="0,10,0,0">
+
+                <Label x:Name="StatusLabel"
+                       Text="READY TO SCAN..."
+                       FontSize="14"
+                       HorizontalOptions="Center"
+                       TextColor="White"
+                       HorizontalTextAlignment="Center" />
+            </Border>
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,15 @@
+C:\Users\alexis\source\repos\dalmen\Sliders\bin\Release\Sliders.exe.config
+C:\Users\alexis\source\repos\dalmen\Sliders\bin\Release\Sliders.exe.manifest
+C:\Users\alexis\source\repos\dalmen\Sliders\bin\Release\Sliders.application
+C:\Users\alexis\source\repos\dalmen\Sliders\bin\Release\Sliders.exe
+C:\Users\alexis\source\repos\dalmen\Sliders\bin\Release\Sliders.pdb
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.csproj.AssemblyReference.cache
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.Form1.resources
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.Properties.Resources.resources
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.csproj.GenerateResource.cache
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.csproj.CoreCompileInputs.cache
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.exe.manifest
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.application
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.exe
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.pdb
+C:\Users\alexis\source\repos\dalmen\Sliders\obj\Release\Sliders.exe.config

@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<asmv1:assembly xsi:schemaLocation="urn:schemas-microsoft-com:asm.v1 assembly.adaptive.xsd" manifestVersion="1.0" xmlns:asmv1="urn:schemas-microsoft-com:asm.v1" xmlns="urn:schemas-microsoft-com:asm.v2" xmlns:asmv2="urn:schemas-microsoft-com:asm.v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:co.v1="urn:schemas-microsoft-com:clickonce.v1" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:co.v2="urn:schemas-microsoft-com:clickonce.v2">
+  <asmv1:assemblyIdentity name="Sliders.exe" version="1.0.0.1" publicKeyToken="04effcfa5f65a9b2" language="neutral" processorArchitecture="msil" type="win32" />
+  <application />
+  <entryPoint>
+    <assemblyIdentity name="Sliders" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
+    <commandLine file="Sliders.exe" parameters="" />
+  </entryPoint>
+  <trustInfo>
+    <security>
+      <applicationRequestMinimum>
+        <PermissionSet Unrestricted="true" ID="Custom" SameSite="site" />
+        <defaultAssemblyRequest permissionSetReference="Custom" />
+      </applicationRequestMinimum>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <!--
+          UAC Manifest Options
+          If you want to change the Windows User Account Control level replace the
+          requestedExecutionLevel node with one of the following.
+
+        <requestedExecutionLevel  level="asInvoker" uiAccess="false" />
+        <requestedExecutionLevel  level="requireAdministrator" uiAccess="false" />
+        <requestedExecutionLevel  level="highestAvailable" uiAccess="false" />
+
+         If you want to utilize File and Registry Virtualization for backward
+         compatibility then delete the requestedExecutionLevel node.
+    -->
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentOS>
+      <osVersionInfo>
+        <os majorVersion="5" minorVersion="1" buildNumber="2600" servicePackMajor="0" />
+      </osVersionInfo>
+    </dependentOS>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="preRequisite" allowDelayedBinding="true">
+      <assemblyIdentity name="Microsoft.Windows.CommonLanguageRuntime" version="4.0.30319.0" />
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Sliders.exe" size="715696">
+      <assemblyIdentity name="Sliders" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+        <dsig:DigestValue>oonhgtx5nfS19S/H7jt63LjYOti08tazTVEQB6WoMLo=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <file name="Sliders.exe.config" size="189">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+      <dsig:DigestValue>R+Wg8QGvQVHX8T0ta/qbhH1bXkqY0fRnS3wBV3J0bN8=</dsig:DigestValue>
+    </hash>
+  </file>
+<publisherIdentity name="CN=DALMEN\Alexis" issuerKeyHash="345deb8b12b09deb68039318003ccb603686bce4" /><Signature Id="StrongNameSignature" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha256" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" /><DigestValue>KbyVZA6OM/cAML2J0bzvEU0cFAIPjNbhYy7S785NgXU=</DigestValue></Reference></SignedInfo><SignatureValue>sWIcIXB69s8/7cfiY0ta4k4zfZ/7foqRRVBf2MPS/hDM/DV0gieRTwOzoz9LQn5Oqsug+vPaMqJKFFDlJIR1E+pkiv4z6YUabj9AOU6kMcT3APa5UuvaUvJ8BgGs6zWRnks3umLFqPhw3Mo7uLpcFoOzMV2FzSqRCXB4zl0smgQ=</SignatureValue><KeyInfo Id="StrongNameKeyInfo"><KeyValue><RSAKeyValue><Modulus>t/litJykaUZNb13TDi3+on2+CoWr93wPXrRVrj1F6BE74hzeHi4tswv2X6VdFYo0QZ4UVP5QA4uIepxdfsbjXZsydAopI6Y/8DSbvFvO0VfCeke3daYYpVjpHe8DpCd4k+DDembvrZrF7vYgNTVShSy7bcdAgxvQWQDNVW3H4lE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><msrel:RelData xmlns:msrel="http://schemas.microsoft.com/windows/rel/2005/reldata"><r:license xmlns:r="urn:mpeg:mpeg21:2003:01-REL-R-NS" xmlns:as="http://schemas.microsoft.com/windows/pki/2005/Authenticode"><r:grant><as:ManifestInformation Hash="75814dceefd22e63e1d68c0f02141c4d11efbcd189bd3000f7338e0e6495bc29" Description="" Url=""><as:assemblyIdentity name="Sliders.exe" version="1.0.0.1" publicKeyToken="04effcfa5f65a9b2" language="neutral" processorArchitecture="msil" type="win32" /></as:ManifestInformation><as:SignedBy /><as:AuthenticodePublisher><as:X509SubjectName>CN=DALMEN\Alexis</as:X509SubjectName></as:AuthenticodePublisher></r:grant><r:issuer><Signature Id="AuthenticodeSignature" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha256" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" /><DigestValue>QLrvpccwRyvv3szajlPXguTgXioWATy+QeKP5PBZpqg=</DigestValue></Reference></SignedInfo><SignatureValue>aINjM8BpeecNEHGtNvj0pvC74DriRuwVtOw/yuo9du7u1BIz+h8cYc5Zk8+itq/oxF1hMRa5KAXk/KPJ/f64ThNt11rVNhUrz1a0x/3vV9E2UCZBUSJEG+IZEfljEcjjIvf/3qwDfwjn3ezpJr9pHCVIlavsLelRa4cIosWnKmk=</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>t/litJykaUZNb13TDi3+on2+CoWr93wPXrRVrj1F6BE74hzeHi4tswv2X6VdFYo0QZ4UVP5QA4uIepxdfsbjXZsydAopI6Y/8DSbvFvO0VfCeke3daYYpVjpHe8DpCd4k+DDembvrZrF7vYgNTVShSy7bcdAgxvQWQDNVW3H4lE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIBzTCCATagAwIBAgIQYprAkre7S5dFNpScryQdmDANBgkqhkiG9w0BAQsFADAlMSMwIQYDVQQDHhoARABBAEwATQBFAE4AXABBAGwAZQB4AGkAczAeFw0yNTA5MDgxODIxMDhaFw0yNjA5MDkwMDIxMDhaMCUxIzAhBgNVBAMeGgBEAEEATABNAEUATgBcAEEAbABlAHgAaQBzMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC3+WK0nKRpRk1vXdMOLf6ifb4Khav3fA9etFWuPUXoETviHN4eLi2zC/ZfpV0VijRBnhRU/lADi4h6nF1+xuNdmzJ0Cikjpj/wNJu8W87RV8J6R7d1philWOkd7wOkJ3iT4MN6Zu+tmsXu9iA1NVKFLLttx0CDG9BZAM1VbcfiUQIDAQABMA0GCSqGSIb3DQEBCwUAA4GBALLHyEPd5HeDlSJlpjd30unF/0iaZpWMOMb26QzJrSREgv9wLT842L64Sfez7wn2BCvvy0H0XQsV5QVoc+/2zGi05u0EOw5X3H7Yb/XAWsAORF5+dFBEgCJzVmntpf8buf0p6CnEka1yTk3AdtOWfl90RYWqdp4C35krLycBHKqJ</X509Certificate></X509Data></KeyInfo></Signature></r:issuer></r:license></msrel:RelData></KeyInfo></Signature></asmv1:assembly>
