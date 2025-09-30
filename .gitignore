@@ -1,1 +1,17 @@
 .vs/ 
+*.user
+*.suo
+*.userosscache
+*.userprefs
+*.resharper
+*.DotSettings.user
+.idea/
+**/bin/
+**/obj/
+**/Debug*/
+**/Release*/
+packages/
+*.nupkg
+.vscode/
+.DS_Store
+Thumbs.db
