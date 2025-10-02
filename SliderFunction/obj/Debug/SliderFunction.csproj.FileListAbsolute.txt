@@ -1,9 +1,0 @@
-C:\Users\alexis\source\repos\dalmen\SliderFunction\bin\Debug\SliderFunction.exe.config
-C:\Users\alexis\source\repos\dalmen\SliderFunction\bin\Debug\SliderFunction.exe
-C:\Users\alexis\source\repos\dalmen\SliderFunction\bin\Debug\SliderFunction.pdb
-C:\Users\alexis\source\repos\dalmen\SliderFunction\obj\Debug\SliderFunction.csproj.AssemblyReference.cache
-C:\Users\alexis\source\repos\dalmen\SliderFunction\obj\Debug\SliderFunction.Properties.Resources.resources
-C:\Users\alexis\source\repos\dalmen\SliderFunction\obj\Debug\SliderFunction.csproj.GenerateResource.cache
-C:\Users\alexis\source\repos\dalmen\SliderFunction\obj\Debug\SliderFunction.csproj.CoreCompileInputs.cache
-C:\Users\alexis\source\repos\dalmen\SliderFunction\obj\Debug\SliderFunction.exe
-C:\Users\alexis\source\repos\dalmen\SliderFunction\obj\Debug\SliderFunction.pdb
