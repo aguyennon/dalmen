@@ -393,5 +393,18 @@ namespace BarcodeGenerator
             pbxBarcode3.Image = null;
             pbxBarcode4.Image = null;
         }
+
+        private void btnFetchDB_Click(object sender, EventArgs e)
+        {
+            frmDB frmDB = new frmDB(); // This is to create an instance of the new form
+
+            // And then this is to display it, when showdialog is used it means to interact with form1 again it needs to close
+            frmDB.ShowDialog(); 
+        }
+
+        private void tbxCode4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

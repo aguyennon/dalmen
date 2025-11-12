@@ -17,10 +17,8 @@ using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 using ClosedXML.Excel;
 using System.Runtime.InteropServices;
-
-
-
-
+using CommunityToolkit.Maui.Media;
+using Plugin.Maui.OCR;
 
 
 namespace MobileScanner.Views;
@@ -31,6 +29,10 @@ public partial class ScanPage : ContentPage
     private readonly AuthService _authService;
     private readonly ExcelService _excelService;
     private readonly ClipboardService _clipboardService;
+    private readonly AutomationService _automationService;
+    private Button _autoLoginButton;
+    private Button _autoSendButton;
+    private IOcrService? _ocrService;
     private CameraBarcodeReaderView? _cameraView;
     private Label _statusLabel;
     private Entry _barcodeEntry;
@@ -38,7 +40,6 @@ public partial class ScanPage : ContentPage
     private Button _excelButton;
     private Button _clearButton;
     private Button _historyButton;
-    private Button _torchButton;
     private Button _confirmButton;
     private Button _copyAllButton;
     private Button _nextButton;
@@ -53,6 +54,9 @@ public partial class ScanPage : ContentPage
     private const int MAX_SCANS = 3;
     private const int MAX_GROUP_HISTORY = 20;
     private bool isGroupScanMode = false;
+    private bool isTextMode = false;
+    private bool isProcessingOcr = false;
+
 
     // Class to store group scan data with quantity
     public class GroupScanData
@@ -79,6 +83,7 @@ public partial class ScanPage : ContentPage
         _authService = authService ?? new AuthService();
         _excelService = new ExcelService(_authService);
         _clipboardService = new ClipboardService();
+        _automationService = new AutomationService();
 
         // Get references to controls after InitializeComponent
         _cameraView = this.FindByName<CameraBarcodeReaderView>("CameraView");
@@ -88,12 +93,21 @@ public partial class ScanPage : ContentPage
         _excelButton = this.FindByName<Button>("ScanSendButton");
         _clearButton = this.FindByName<Button>("ClearButton");
         _historyButton = this.FindByName<Button>("HistoryButton");
-        _torchButton = this.FindByName<Button>("TorchButton");
         _confirmButton = this.FindByName<Button>("ConfirmButton");
         _copyAllButton = this.FindByName<Button>("CopyAllButton");
         _nextButton = this.FindByName<Button>("NextButton");
         _createPdfButton = this.FindByName<Button>("CreatePdfButton");
         _sendExcel = this.FindByName<Button>("SendExcelButton");
+        _autoLoginButton = this.FindByName<Button>("AutoLoginButton");
+        _autoSendButton = this.FindByName<Button>("AutoSendButton");
+
+        _ocrService = OcrPlugin.Default;
+
+        var modeSwitch = this.FindByName<Switch>("ModeSwitch");
+        if (modeSwitch != null)
+        {
+            modeSwitch.Toggled += ModeSwitch_Toggled;
+        }
 
         try
         {
@@ -116,7 +130,20 @@ public partial class ScanPage : ContentPage
                 _historyButton.Clicked += OnGroupHistoryClicked;
 
             if (_sendExcel != null)
-                _sendExcel.Clicked += OnSendExcelClicked; // if you have separate send-to-excel button
+                _sendExcel.Clicked += OnSendExcelClicked;
+
+            if (_autoLoginButton != null)
+            {
+                _autoLoginButton.Clicked -= OnAutoLoginClicked;
+                _autoLoginButton.Clicked += OnAutoLoginClicked;
+            }
+
+            if (_autoSendButton != null)
+            {
+                _autoSendButton.Clicked -= OnAutoSendClicked;
+                _autoSendButton.Clicked += OnAutoSendClicked;
+            }
+
         }
         catch (Exception ex)
         {
@@ -148,7 +175,140 @@ public partial class ScanPage : ContentPage
     private readonly TimeSpan DuplicateWindow = TimeSpan.FromSeconds(5);
     private readonly object _scanLock = new object();
     private readonly Dictionary<string, DateTime> _recentScans = new Dictionary<string, DateTime>();
+    private async Task ShowMenu(StackLayout menu);
+    private async Task HideAllMenus();
+    private async void OnMainMenuButtonClicked(object sender, EventArgs e);
 
+
+    private void ModeSwitch_Toggled(object sender, ToggledEventArgs e)
+    {
+        isTextMode = e.Value;
+
+        // Keep camera running but just ignore barcode events in text mode
+        // Don't turn off IsDetecting
+
+        // Show/hide capture button
+        var captureButton = this.FindByName<Button>("CaptureButton");
+        if (captureButton != null)
+            captureButton.IsVisible = isTextMode;
+
+        if (_statusLabel != null)
+        {
+            _statusLabel.Text = isTextMode
+                ? "TEXT MODE - Tap CAPTURE TEXT to scan"
+                : "READY TO SCAN. (CODE 128)";
+        }
+
+    }
+
+    private async void OnCaptureClicked(object sender, EventArgs e)
+    {
+        if (!isTextMode || _ocrService == null || isProcessingOcr)
+            return;
+
+        isProcessingOcr = true;
+
+        try
+        {
+            if (_statusLabel != null)
+                _statusLabel.Text = "Taking photo...";
+
+            // Take a photo using the camera
+            var photo = await MediaPicker.CapturePhotoAsync(new MediaPickerOptions
+            {
+                Title = "Capture text to scan"
+            });
+
+            if (photo == null)
+            {
+                isProcessingOcr = false;
+                if (_statusLabel != null)
+                    _statusLabel.Text = "TEXT MODE - Tap CAPTURE TEXT to scan";
+                return;
+            }
+
+            if (_statusLabel != null)
+                _statusLabel.Text = "Processing text...";
+
+            // Convert photo to byte array
+            using var stream = await photo.OpenReadAsync();
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var imageBytes = ms.ToArray();
+
+            // Perform OCR
+            var result = await _ocrService.RecognizeTextAsync(imageBytes);
+
+            if (!string.IsNullOrWhiteSpace(result?.AllText))
+            {
+                string recognizedText = result.AllText.Trim();
+
+                // Show what was detected (for debugging)
+                System.Diagnostics.Debug.WriteLine($"OCR detected: {recognizedText}");
+
+                string filteredText = ExtractNumbersUntilSpace(recognizedText);
+
+                if (!string.IsNullOrEmpty(filteredText))
+                {
+                    if (_barcodeEntry != null)
+                        _barcodeEntry.Text = filteredText;
+
+                    if (_statusLabel != null)
+                        _statusLabel.Text = $"Numbers recognized: {filteredText}";
+
+                    currentScanSession.Add(filteredText);
+                    EnableActionButtons(true);
+
+                    var toast = Toast.Make("NUMBERS RECOGNIZED!", ToastDuration.Short, 14);
+                    await toast.Show();
+                }
+                else
+                {
+                    if (_statusLabel != null)
+                        _statusLabel.Text = $"OCR found: '{recognizedText}' but no numbers extracted";
+
+                    await DisplayAlert("No Numbers", $"Detected text: '{recognizedText}'\n\nBut no numbers found before first space.", "OK");
+                }
+            }
+            else
+            {
+                if (_statusLabel != null)
+                    _statusLabel.Text = "No text recognized - try again";
+
+                await DisplayAlert("No Text", "Could not recognize any text. Try:\n- Better lighting\n- Clearer text\n- Holding camera steady", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_statusLabel != null)
+                _statusLabel.Text = "OCR error";
+
+            await DisplayAlert("Error", $"Text recognition failed: {ex.Message}", "OK");
+        }
+        finally
+        {
+            isProcessingOcr = false;
+        }
+    }
+
+    private string ExtractNumbersUntilSpace(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+
+        var result = new System.Text.StringBuilder();
+
+        foreach (char c in input)
+        {
+            if (char.IsWhiteSpace(c))
+                break;
+
+            if (char.IsDigit(c) || c == '-')
+                result.Append(c);
+        }
+
+        return result.ToString();
+    }
     private void OnBarcodeScanned(string scannedValue)
     {
         if (string.IsNullOrWhiteSpace(scannedValue))
@@ -170,7 +330,6 @@ public partial class ScanPage : ContentPage
     private string NormalizeBarcode(string input)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
-        // trim and remove CR/LF and surrounding whitespace
         return input.Trim().Replace("\r", "").Replace("\n", "");
     }
 
@@ -219,21 +378,21 @@ public partial class ScanPage : ContentPage
 
             foreach (var group in groupHistory)
             {
-                    string line = group.GetFormattedString();
+                string line = group.GetFormattedString();
 
-                    if (!string.IsNullOrEmpty(line))
+                if (!string.IsNullOrEmpty(line))
+                {
+                    graphics.DrawString(line, font, PdfBrushes.Black, new Syncfusion.Drawing.PointF(20, yPosition));
+                    yPosition += 20;
+
+                    if (yPosition > page.GetClientSize().Height - 40)
                     {
-                        graphics.DrawString(line, font, PdfBrushes.Black, new Syncfusion.Drawing.PointF(20, yPosition));
-                        yPosition += 20;
+                        page = document.Pages.Add();
+                        graphics = page.Graphics;
+                        yPosition = 20;
 
-                        if (yPosition > page.GetClientSize().Height - 40)
-                        {
-                            page = document.Pages.Add();
-                            graphics = page.Graphics;
-                            yPosition = 20;
-
-                        }
                     }
+                }
             }
 
 
@@ -368,94 +527,82 @@ public partial class ScanPage : ContentPage
 
     private async void CameraView_BarcodesDetected(object? sender, BarcodeDetectionEventArgs e)
     {
+
+        if (isTextMode)
+            return; // ignore barcode events in text mode
         try
-    {
-        // Collect distinct normalized values from the event
-        var values = e.Results?
-            .Select(r => NormalizeBarcode(r.Value))
-            .Where(v => !string.IsNullOrEmpty(v))
-            .Distinct()
-            .ToList();
-
-        if (values == null || values.Count == 0)
-            return;
-
-        // Pause detection briefly while we process (keeps things stable)
-        if (_cameraView != null)
-            _cameraView.IsDetecting = false;
-
-        var now = DateTime.UtcNow;
-
-        foreach (var scannedCode in values)
         {
-            bool shouldHandle = false;
+            // Collect distinct normalized values from the event
+            var values = e.Results?
+                .Select(r => NormalizeBarcode(r.Value))
+                .Where(v => !string.IsNullOrEmpty(v))
+                .Distinct()
+                .ToList();
 
-            lock (_scanLock)
+            if (values == null || values.Count == 0)
+                return;
+
+            // Pause detection briefly while we process (keeps things stable)
+            if (_cameraView != null)
+                _cameraView.IsDetecting = false;
+
+            var now = DateTime.UtcNow;
+
+            foreach (var scannedCode in values)
             {
-                // cleanup old entries
-                var oldKeys = _recentScans.Where(kv => (now - kv.Value) > DuplicateWindow)
-                                          .Select(kv => kv.Key)
-                                          .ToList();
-                foreach (var k in oldKeys)
-                    _recentScans.Remove(k);
+                bool shouldHandle = false;
 
-                // check whether this code was seen recently
-                if (!_recentScans.TryGetValue(scannedCode, out var last) || (now - last) > DuplicateWindow)
+                lock (_scanLock)
                 {
-                    // mark as seen now
-                    _recentScans[scannedCode] = now;
-                    shouldHandle = true;
-                }
-            }
+                    // cleanup old entries
+                    var oldKeys = _recentScans.Where(kv => (now - kv.Value) > DuplicateWindow)
+                                              .Select(kv => kv.Key)
+                                              .ToList();
+                    foreach (var k in oldKeys)
+                        _recentScans.Remove(k);
 
-            if (!shouldHandle)
-            {
-                // optional: small feedback for duplicate ignored (comment out if noisy)
-                try
-                {
-                    MainThread.BeginInvokeOnMainThread(async () =>
+                    // check whether this code was seen recently
+                    if (!_recentScans.TryGetValue(scannedCode, out var last) || (now - last) > DuplicateWindow)
                     {
-                        var t = Toast.Make("Duplicate scan ignored", ToastDuration.Short, 12);
-                        await t.Show();
-                    });
+                        // mark as seen now
+                        _recentScans[scannedCode] = now;
+                        shouldHandle = true;
+                    }
                 }
-                catch { }
 
-                continue;
+
+                // Handle on main thread (UI updates)
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
+
+                    var toast = Toast.Make("BARCODE SCANNED!", ToastDuration.Short, 14);
+                    await toast.Show();
+
+                    if (isGroupScanMode)
+                    {
+                        OnBarcodeScannedInGroup(scannedCode);
+                    }
+                    else
+                    {
+                        OnBarcodeScanned(scannedCode);
+                        EnableActionButtons(true);
+                    }
+                });
             }
-
-            // Handle on main thread (UI updates)
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-
-                var toast = Toast.Make("BARCODE SCANNED!", ToastDuration.Short, 14);
-                await toast.Show();
-
-                if (isGroupScanMode)
-                {
-                    OnBarcodeScannedInGroup(scannedCode);
-                }
-                else
-                {
-                    OnBarcodeScanned(scannedCode);
-                    EnableActionButtons(true);
-                }
-            });
         }
-    }
-    catch (Exception ex)
-    {
-        // avoid crashing if something goes wrong in the detection event
-        System.Diagnostics.Debug.WriteLine($"CameraView_BarcodesDetected error: {ex}");
-    }
-    finally
-    {
-        // small delay so processing settles, then resume detection
-        await Task.Delay(500);
-        if (_cameraView != null)
-            _cameraView.IsDetecting = true;
-    }
+        catch (Exception ex)
+        {
+            // avoid crashing if something goes wrong in the detection event
+            System.Diagnostics.Debug.WriteLine($"CameraView_BarcodesDetected error: {ex}");
+        }
+        finally
+        {
+            // small delay so processing settles, then resume detection
+            await Task.Delay(500);
+            if (_cameraView != null)
+                _cameraView.IsDetecting = true;
+        }
     }
 
 
@@ -986,7 +1133,7 @@ public partial class ScanPage : ContentPage
 
     void OnTorchClicked(object sender, EventArgs e)
     {
-        if (_cameraView != null) 
+        if (_cameraView != null)
             _cameraView.IsTorchOn = !_cameraView.IsTorchOn;
     }
 
@@ -1000,11 +1147,101 @@ public partial class ScanPage : ContentPage
         }
     }
 
-    private void OnCaptureClicked(object sender, EventArgs e)
+    private async void OnAutoLoginClicked(object sender, EventArgs e)
     {
-        // TODO: Implement the logic for the capture button click
-        // For now, you can leave it empty or add a placeholder
+        try
+        {
+            if (_statusLabel != null)
+                _statusLabel.Text = "Connecting to PC...";
+
+            // Disable button while processing
+            if (_autoLoginButton != null)
+                _autoLoginButton.IsEnabled = false;
+
+            // Check if server is running
+            bool serverRunning = await _automationService.CheckServerStatusAsync();
+
+            if (!serverRunning)
+            {
+                await DisplayAlert("Connection Error",
+                    "Cannot connect to PC automation server.\n\n" +
+                    "Make sure:\n" +
+                    "1. Python script is running on PC\n" +
+                    "2. Both devices are on same WiFi\n" +
+                    "3. PC IP is 192.168.1.186", "OK");
+
+                if (_statusLabel != null)
+                    _statusLabel.Text = "PC not reachable";
+
+                return;
+            }
+
+            // Trigger login
+            if (_statusLabel != null)
+                _statusLabel.Text = "Logging in on PC...";
+
+            var (success, message) = await _automationService.TriggerLoginAsync();
+
+            if (success)
+            {
+                if (_statusLabel != null)
+                    _statusLabel.Text = "✓ PC logged in successfully!";
+
+                await DisplayAlert("Success",
+                    "PC automation logged in successfully!", "OK");
+            }
+            else
+            {
+                if (_statusLabel != null)
+                    _statusLabel.Text = "Login failed";
+
+                await DisplayAlert("Login Failed",
+                    $"Failed to login on PC:\n{message}", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_statusLabel != null)
+                _statusLabel.Text = "Error connecting to PC";
+
+            await DisplayAlert("Error",
+                $"Automation error: {ex.Message}", "OK");
+        }
+        finally
+        {
+            // Re-enable button
+            if (_autoLoginButton != null)
+                _autoLoginButton.IsEnabled = true;
+        }
     }
 
+    private async void OnAutoSendClicked(object sender, EventArgs e)
+    {
+        string barcode = _barcodeEntry?.Text?.Trim();
 
+        if (string.IsNullOrEmpty(barcode))
+        {
+            await DisplayAlert("No Barcode", "Scan a barcode first!", "OK");
+            return;
+        }
+
+        _statusLabel.Text = "Sending to PC...";
+        _autoSendButton.IsEnabled = false;
+
+        var (success, message) = await _automationService.SendBarcodeAsync(barcode);
+
+        if (success)
+        {
+            _statusLabel.Text = $"✓ Sent: {barcode}";
+            await DisplayAlert("Success", $"Barcode sent to PC!\n{message}", "OK");
+            _barcodeEntry.Text = string.Empty;
+        }
+        else
+        {
+            _statusLabel.Text = "Failed to send";
+            await DisplayAlert("Sending Failed", message, "OK");
+        }
+
+        _autoSendButton.IsEnabled = true;
+    }
 }

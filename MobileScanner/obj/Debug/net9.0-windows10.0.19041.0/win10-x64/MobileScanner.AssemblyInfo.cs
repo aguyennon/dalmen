@@ -18,7 +18,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MobileScanner")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+2c521ea1d5a80152220902ac29aa02c9887878b7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+31dad34b47e244540627d88f9954fef46ed81c4b")]
 [assembly: System.Reflection.AssemblyProductAttribute("MobileScanner")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MobileScanner")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

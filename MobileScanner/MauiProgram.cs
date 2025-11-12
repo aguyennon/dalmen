@@ -26,7 +26,6 @@ namespace MobileScanner
             // Register services for dependency injection
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<ClipboardService>();
-            builder.Services.AddTransient<ExcelService>();
             builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<ScanPage>();
 
@@ -37,5 +36,7 @@ namespace MobileScanner
 
             return builder.Build();
         }
+
+
     }
 }

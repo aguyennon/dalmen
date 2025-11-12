@@ -1,4 +1,6 @@
-﻿using System;
+﻿using iTextSharp.text.pdf;
+using iTextSharp.text;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -10,7 +12,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml.Linq;
+using Color = System.Drawing.Color;
+using Font = iTextSharp.text.Font;
 
 namespace PurchaseOrder
 {
@@ -81,7 +84,7 @@ namespace PurchaseOrder
 
         private void btnPrintPDF_Click(object sender, EventArgs e)
         {
-            SaveAsPDF();
+            SaveAsFillablePDF();
             PrintForm();
             IncrementPONumber();
             ClearForm();
@@ -127,34 +130,157 @@ namespace PurchaseOrder
             e.Graphics.DrawImage(memoryImage, 0, 0);
         }
 
-        private void SaveAsPDF()
+        private void SaveAsFillablePDF()
         {
-            try
+            string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PurchaseOrders");
+
+            Directory.CreateDirectory(folderPath);
+            string filePath = Path.Combine(folderPath, $"PO_{currentPONumber}_{DateTime.Now:yyyyMMdd}.pdf");
+
+            using (FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
             {
-                CaptureScreen();
+                Document doc = new Document(PageSize.A4, 50, 50, 50, 50);
+                PdfWriter writer = PdfWriter.GetInstance(doc, fs);
+                doc.Open();
 
-                // Create filename with PO number
-                string fileName = $"PO_{currentPONumber}_{DateTime.Now:yyyyMMdd}.png";
-                string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PurchaseOrders");
+                PdfContentByte cb = writer.DirectContent;
 
-                // Create directory if it doesn't exist
-                if (!Directory.Exists(folderPath))
+                // LOGO
+                if (pbxLogo.Image != null)
                 {
-                    Directory.CreateDirectory(folderPath);
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        pbxLogo.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                        ms.Position = 0;
+
+                        iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(ms);
+                        logo.ScaleAbsolute(200f, 100f);
+                        logo.SetAbsolutePosition(60f, 730f);
+                        doc.Add(logo);
+                    }
                 }
 
-                string fullPath = Path.Combine(folderPath, fileName);
+                cb.BeginText();
+                cb.SetFontAndSize(BaseFont.CreateFont(), 12);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "5630 St-Catherine", 60, 690, 0);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "St-Isidore, Ontario", 60, 678, 0);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "K0C 2B0", 60, 666, 0);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "(613) 524-2268", 60, 654, 0);
+                cb.EndText();
 
-                // Save as image (PNG format maintains quality)
-                memoryImage.Save(fullPath, ImageFormat.Png);
+                // BOX TOP RIGHT
+                cb.Rectangle(350f, 670f, 230f, 150f);
+                cb.Stroke();
 
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_CENTER,
+                    new Phrase("Purchase Order", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14)), 440f, 800f, 0);
 
+                float leftX = 360f;
+                float rightX = 480f;
+                float y = 725f;
+
+                cb.Rectangle(rightX, y + 45, 50f, 20f);
+                cb.Stroke();
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Date:"), leftX, y + 50, 0);
+                TextField dateField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 65, rightX + 50, y + 45), "Date");
+                dateField.Text = DateTime.Now.ToString("dd MMM yyyy");
+                writer.AddAnnotation(dateField.GetTextField());
+
+                y -= 20;
+                cb.Rectangle(rightX, y + 35, 50f, 20f);
+                cb.Stroke();
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("P.O. #:"), leftX, y + 40, 0);
+                TextField poField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 55, rightX + 50, y + 35), "PO");
+                poField.Text = currentPONumber.ToString();
+                writer.AddAnnotation(poField.GetTextField());
+
+                y -= 30;
+                cb.Rectangle(rightX - 40, y + 33, 100f, 20f);
+                cb.Stroke();
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Name:"), leftX, y + 38, 0);
+                TextField nameField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 53, rightX + 60, y + 33), "Name");
+                dateField.Text = tbxName.Text.ToString();
+                writer.AddAnnotation(nameField.GetTextField());
+
+                y -= 20;
+                cb.Rectangle(rightX - 40, y + 23, 100f, 20f);
+                cb.Stroke();
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Supplier:"), leftX, y + 30, 0);
+                TextField supplierField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 43, rightX + 60, y + 23), "Supplier");
+                supplierField.Text = tbxSupplierName.Text.ToString();
+                writer.AddAnnotation(supplierField.GetTextField());
+
+                // For each section in header
+                float tableTopY = 550f;
+                float xQty = 60f;
+                float xDesc = 150f; 
+                float xUom = 500f;
+                float rowHeight = 25f;
+
+                // HEADER
+                BaseFont bfBold = BaseFont.CreateFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, false);
+                cb.BeginText();
+                cb.SetFontAndSize(bfBold, 11);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "QTY", xQty, tableTopY + 10, 0);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "Description", xDesc, tableTopY + 10, 0);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "Unit of Measure", xUom, tableTopY + 10, 0);
+                cb.EndText();
+
+                for (int i = 1; i <= 8; i++)
+                {
+                    float yPosition = tableTopY - (i * rowHeight);
+
+                    // qty
+                    cb.Rectangle(xQty, yPosition, 60f, 18f);
+                    cb.Stroke();
+                    TextField qtyField = new TextField(writer, new iTextSharp.text.Rectangle(xQty, yPosition, xQty + 60, yPosition + 18), $"qty{i}");
+                    qtyField.Text = GetTextBoxValue($"tbxQty{i}");
+                    writer.AddAnnotation(qtyField.GetTextField());
+
+                    cb.Rectangle(xDesc, yPosition, 320f, 18f);
+                    cb.Stroke();
+                    TextField descField = new TextField(writer, new iTextSharp.text.Rectangle(xDesc, yPosition, xDesc + 320, yPosition + 18), $"desc{i}");
+                    descField.Text = GetTextBoxValue($"tbxDesc{i}");
+                    writer.AddAnnotation(descField.GetTextField());
+
+                    cb.Rectangle(xUom, yPosition, 60f, 18f);
+                    cb.Stroke();
+                    TextField uomField = new TextField(writer, new iTextSharp.text.Rectangle(xUom, yPosition, xUom + 60, yPosition + 18), $"uom{i}");
+                    uomField.Text = GetTextBoxValue($"tbxUOM{i}");
+                    writer.AddAnnotation(uomField.GetTextField());
+                }
+
+                // COLOUR SELECTION
+                cb.BeginText();
+                cb.SetFontAndSize(BaseFont.CreateFont(), 11);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "Exterior Color:", 60, 120, 0);
+                cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "Interior Color:", 320, 120, 0);
+                cb.EndText();
+
+                cb.Rectangle(60f, 100f, 240f, 18f);
+                cb.Stroke();
+                TextField colorExt = new TextField(writer, new iTextSharp.text.Rectangle(60, 100, 300, 118), "ExteriorColor");
+                colorExt.Text = cbxExtCol.Text;
+                writer.AddAnnotation(colorExt.GetTextField());
+
+                cb.Rectangle(320f, 100f, 240f, 18f); 
+                cb.Stroke();
+                TextField colorInt = new TextField(writer, new iTextSharp.text.Rectangle(320, 100, 560, 118), "InteriorColor");
+                colorInt.Text = cbxIntCol.Text;
+                writer.AddAnnotation(colorInt.GetTextField());
+
+                doc.Close();
+                writer.Close();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error saving PDF: {ex.Message}");
 
-            }
+           
+
+        }
+
+        private string GetTextBoxValue(string name)
+        {
+            var tb = this.Controls.Find(name, true).FirstOrDefault() as TextBox;
+            return tb?.Text ?? "";
         }
 
         private void ClearForm()

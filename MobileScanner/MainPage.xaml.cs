@@ -12,7 +12,7 @@ namespace MobileScanner;
 public partial class MainPage : ContentPage
 {
     private readonly AuthService _authService;
-    
+
 
     public MainPage()
     {
@@ -163,7 +163,7 @@ public partial class MainPage : ContentPage
 
         await DisplayAlert("Excel Updated", $"Excel file updated. Next empty row is {newRow}.", "OK");
     }
-    
+
 
 
 }

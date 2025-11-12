@@ -1,13 +1,5 @@
-﻿using System;
-using Microsoft.Maui.ApplicationModel.DataTransfer;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Syncfusion.Pdf;
-using Syncfusion.Pdf.Graphics;
-using System.IO;
-using Microsoft.Maui.Storage;
+﻿using System.Text;
+
 
 
 namespace MobileScanner.Services
@@ -22,8 +14,7 @@ namespace MobileScanner.Services
         {
             _clipboardHistory = new List<string>();
         }
-
-        
+  
         /// <summary>
         /// Copying text to clipboard and adding to history.
         /// </summary>
@@ -57,22 +48,23 @@ namespace MobileScanner.Services
             }
         }
 
-    public class ClipboardHistoryItem
-{
-    public string Text { get; set; }
-    public DateTime Timestamp { get; set; }
-
-    public ClipboardHistoryItem(string text)
+        // This class represents a clipboard history item with text and timestamp
+        public class ClipboardHistoryItem
     {
+        public string Text { get; set; }
+        public DateTime Timestamp { get; set; }
+
+        public ClipboardHistoryItem(string text)
+        {
         Text = text;
         Timestamp = DateTime.Now;
-    }
+        }
 
-    public override string ToString()
-    {
+        public override string ToString()
+        {
         return $"{Text} ({Timestamp:yyyy-MM-dd HH:mm:ss})";
+        }
     }
-}
 
         /// <summary>
         /// Getting text from clipboard
@@ -93,6 +85,8 @@ namespace MobileScanner.Services
                 return string.Empty;
             }
         }
+
+        // This method copies all history items to clipboard, separated by a specified separator
         public async Task<bool> CopyAllHistoryAsync(string separator = "\n")
         {
             try

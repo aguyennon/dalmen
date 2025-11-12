@@ -53,6 +53,7 @@
             this.tbxCode4 = new System.Windows.Forms.TextBox();
             this.lblEnterCode4 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.btnFetchDB = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbxBarcode1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbxBarcode2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbxBarcode3)).BeginInit();
@@ -288,6 +289,7 @@
             this.tbxCode4.Name = "tbxCode4";
             this.tbxCode4.Size = new System.Drawing.Size(185, 35);
             this.tbxCode4.TabIndex = 24;
+            this.tbxCode4.TextChanged += new System.EventHandler(this.tbxCode4_TextChanged);
             // 
             // lblEnterCode4
             // 
@@ -309,12 +311,26 @@
             this.label1.TabIndex = 25;
             this.label1.Text = "This barcode is optional and strictly to generate longer barcodes.";
             // 
+            // btnFetchDB
+            // 
+            this.btnFetchDB.BackColor = System.Drawing.Color.MidnightBlue;
+            this.btnFetchDB.Font = new System.Drawing.Font("Myanmar Text", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnFetchDB.ForeColor = System.Drawing.SystemColors.Control;
+            this.btnFetchDB.Location = new System.Drawing.Point(496, 527);
+            this.btnFetchDB.Name = "btnFetchDB";
+            this.btnFetchDB.Size = new System.Drawing.Size(150, 78);
+            this.btnFetchDB.TabIndex = 26;
+            this.btnFetchDB.Text = "&FETCH from DATABASE";
+            this.btnFetchDB.UseVisualStyleBackColor = false;
+            this.btnFetchDB.Click += new System.EventHandler(this.btnFetchDB_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(715, 841);
             this.ControlBox = false;
+            this.Controls.Add(this.btnFetchDB);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.tbxCode4);
             this.Controls.Add(this.lblEnterCode4);
@@ -379,6 +395,7 @@
         private System.Windows.Forms.TextBox tbxCode4;
         private System.Windows.Forms.Label lblEnterCode4;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button btnFetchDB;
     }
 }
 

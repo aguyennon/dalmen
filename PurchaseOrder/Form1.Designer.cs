@@ -40,7 +40,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.tbxSupplierName = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.pbxLogo = new System.Windows.Forms.PictureBox();
             this.lblAddress = new System.Windows.Forms.Label();
             this.lblCity = new System.Windows.Forms.Label();
             this.lblZip = new System.Windows.Forms.Label();
@@ -51,7 +51,7 @@
             this.cbxExtCol = new System.Windows.Forms.ComboBox();
             this.lblExtCol = new System.Windows.Forms.Label();
             this.lblIntCol = new System.Windows.Forms.Label();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
+            this.cbxIntCol = new System.Windows.Forms.ComboBox();
             this.lblQty = new System.Windows.Forms.Label();
             this.lblDesc = new System.Windows.Forms.Label();
             this.lblUOM = new System.Windows.Forms.Label();
@@ -89,7 +89,7 @@
             this.label10 = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
             this.gbxTitle.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbxLogo)).BeginInit();
             this.SuspendLayout();
             // 
             // lblDate
@@ -193,15 +193,15 @@
             this.label2.TabIndex = 7;
             this.label2.Text = "Supplier:";
             // 
-            // pictureBox1
+            // pbxLogo
             // 
-            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
-            this.pictureBox1.Location = new System.Drawing.Point(88, 49);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(245, 141);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox1.TabIndex = 7;
-            this.pictureBox1.TabStop = false;
+            this.pbxLogo.Image = ((System.Drawing.Image)(resources.GetObject("pbxLogo.Image")));
+            this.pbxLogo.Location = new System.Drawing.Point(88, 49);
+            this.pbxLogo.Name = "pbxLogo";
+            this.pbxLogo.Size = new System.Drawing.Size(245, 141);
+            this.pbxLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pbxLogo.TabIndex = 7;
+            this.pbxLogo.TabStop = false;
             // 
             // lblAddress
             // 
@@ -344,11 +344,11 @@
             this.lblIntCol.TabIndex = 17;
             this.lblIntCol.Text = "Interior Color";
             // 
-            // comboBox2
+            // cbxIntCol
             // 
-            this.comboBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Items.AddRange(new object[] {
+            this.cbxIntCol.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cbxIntCol.FormattingEnabled = true;
+            this.cbxIntCol.Items.AddRange(new object[] {
             "Dal-04 Blanc",
             "Dal-08 Noir Gentek-525",
             "Dal-10 Kaki Gentek-559",
@@ -397,10 +397,10 @@
             "Dal-5P5 Graphite Gentek-5P5 (Non Standard)",
             "Dal-5P6 Minerais De Fer Gentek-5P6",
             "Dal-98 Anodisé Gentek-Xxx (Non Standard)"});
-            this.comboBox2.Location = new System.Drawing.Point(405, 772);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(286, 26);
-            this.comboBox2.TabIndex = 32;
+            this.cbxIntCol.Location = new System.Drawing.Point(405, 772);
+            this.cbxIntCol.Name = "cbxIntCol";
+            this.cbxIntCol.Size = new System.Drawing.Size(286, 26);
+            this.cbxIntCol.TabIndex = 32;
             // 
             // lblQty
             // 
@@ -766,7 +766,7 @@
             this.Controls.Add(this.lblDesc);
             this.Controls.Add(this.lblQty);
             this.Controls.Add(this.lblIntCol);
-            this.Controls.Add(this.comboBox2);
+            this.Controls.Add(this.cbxIntCol);
             this.Controls.Add(this.lblExtCol);
             this.Controls.Add(this.cbxExtCol);
             this.Controls.Add(this.btnExit);
@@ -775,7 +775,7 @@
             this.Controls.Add(this.lblZip);
             this.Controls.Add(this.lblCity);
             this.Controls.Add(this.lblAddress);
-            this.Controls.Add(this.pictureBox1);
+            this.Controls.Add(this.pbxLogo);
             this.Controls.Add(this.gbxTitle);
             this.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.Name = "Form1";
@@ -784,7 +784,7 @@
             this.Load += new System.EventHandler(this.Form1_Load);
             this.gbxTitle.ResumeLayout(false);
             this.gbxTitle.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbxLogo)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -801,7 +801,7 @@
         private System.Windows.Forms.TextBox tbxSupplierName;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.PictureBox pbxLogo;
         private System.Windows.Forms.Label lblAddress;
         private System.Windows.Forms.Label lblCity;
         private System.Windows.Forms.Label lblZip;
@@ -812,7 +812,7 @@
         private System.Windows.Forms.ComboBox cbxExtCol;
         private System.Windows.Forms.Label lblExtCol;
         private System.Windows.Forms.Label lblIntCol;
-        private System.Windows.Forms.ComboBox comboBox2;
+        private System.Windows.Forms.ComboBox cbxIntCol;
         private System.Windows.Forms.Label lblQty;
         private System.Windows.Forms.Label lblDesc;
         private System.Windows.Forms.Label lblUOM;

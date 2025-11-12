@@ -7,7 +7,6 @@
     <Grid RowDefinitions="Auto,*">
         <!-- Row 0: camera UI -->
         <VerticalStackLayout Padding="30" Spacing="20" Grid.Row="0">
-            <Button Text="Take Photo" Clicked="OnTakePhotoClicked"/>
             <Image x:Name="PhotoResult" HeightRequest="300"/>
         </VerticalStackLayout>
 

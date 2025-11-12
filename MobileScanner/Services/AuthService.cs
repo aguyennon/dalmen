@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
 
+// This class handles authentication using MSAL
 namespace MobileScanner.Services
 {
     public class AuthService
@@ -63,6 +64,7 @@ namespace MobileScanner.Services
                 return false;
             }
         }
+
 
         public string GetAccessToken()
         {

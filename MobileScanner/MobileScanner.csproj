@@ -69,7 +69,6 @@
 
 		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
-
 		<!-- Raw Assets -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
@@ -80,10 +79,14 @@
 	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
 		<InfoPlistItem Include="NSCameraUsageDescription" Value="This app needs access to camera to scan barcodes for inventory management." />
 	</ItemGroup>
+
 	<ItemGroup>
 		<MauiAsset Include="scanthermos.xlsm">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</MauiAsset>
+	</ItemGroup>
+	<ItemGroup>
+		<AndroidResource Include="Platforms\Android\Resources\xml\**\*.xml" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="ClosedXML" Version="0.105.0" />
@@ -96,6 +99,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.100" />
 		<PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1001" />
+		<PackageReference Include="Plugin.Maui.OCR" Version="1.1.1" />
 		<PackageReference Include="Syncfusion.Pdf.Net.Core" Version="31.1.21" />
 		<PackageReference Include="ZXing.Net.Maui" Version="0.4.0" />
 		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
@@ -107,8 +111,5 @@
 		<MauiXaml Update="Views\ScanPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
-	</ItemGroup>
-	<ItemGroup>
-		<Folder Include="Resources\Images\" />
 	</ItemGroup>
 </Project>
