@@ -44,6 +44,7 @@
             this.btnPDFSaved = new System.Windows.Forms.Button();
             this.gbxDescInfo = new System.Windows.Forms.GroupBox();
             this.lblDescInfo = new System.Windows.Forms.Label();
+            this.lblRecordHistory = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pbxBarcode)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.gbxDescInfo.SuspendLayout();
@@ -72,7 +73,7 @@
             this.btnFetchDesc.BackColor = System.Drawing.Color.MidnightBlue;
             this.btnFetchDesc.Font = new System.Drawing.Font("Myanmar Text", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnFetchDesc.ForeColor = System.Drawing.SystemColors.Control;
-            this.btnFetchDesc.Location = new System.Drawing.Point(290, 96);
+            this.btnFetchDesc.Location = new System.Drawing.Point(290, 121);
             this.btnFetchDesc.Name = "btnFetchDesc";
             this.btnFetchDesc.Size = new System.Drawing.Size(213, 71);
             this.btnFetchDesc.TabIndex = 2;
@@ -98,7 +99,7 @@
             this.btnClear.BackColor = System.Drawing.Color.Firebrick;
             this.btnClear.Font = new System.Drawing.Font("Myanmar Text", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnClear.ForeColor = System.Drawing.Color.White;
-            this.btnClear.Location = new System.Drawing.Point(509, 96);
+            this.btnClear.Location = new System.Drawing.Point(509, 121);
             this.btnClear.Name = "btnClear";
             this.btnClear.Size = new System.Drawing.Size(134, 71);
             this.btnClear.TabIndex = 8;
@@ -137,7 +138,7 @@
             this.btnGenCode.BackColor = System.Drawing.Color.MidnightBlue;
             this.btnGenCode.Font = new System.Drawing.Font("Myanmar Text", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnGenCode.ForeColor = System.Drawing.SystemColors.Control;
-            this.btnGenCode.Location = new System.Drawing.Point(69, 96);
+            this.btnGenCode.Location = new System.Drawing.Point(69, 121);
             this.btnGenCode.Name = "btnGenCode";
             this.btnGenCode.Size = new System.Drawing.Size(215, 71);
             this.btnGenCode.TabIndex = 11;
@@ -147,7 +148,7 @@
             // 
             // pbxBarcode
             // 
-            this.pbxBarcode.Location = new System.Drawing.Point(69, 186);
+            this.pbxBarcode.Location = new System.Drawing.Point(69, 203);
             this.pbxBarcode.Name = "pbxBarcode";
             this.pbxBarcode.Size = new System.Drawing.Size(574, 84);
             this.pbxBarcode.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -207,7 +208,7 @@
             // 
             this.gbxDescInfo.Controls.Add(this.lblDescInfo);
             this.gbxDescInfo.Font = new System.Drawing.Font("Myanmar Text", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.gbxDescInfo.Location = new System.Drawing.Point(69, 275);
+            this.gbxDescInfo.Location = new System.Drawing.Point(69, 293);
             this.gbxDescInfo.Name = "gbxDescInfo";
             this.gbxDescInfo.Size = new System.Drawing.Size(574, 98);
             this.gbxDescInfo.TabIndex = 28;
@@ -224,6 +225,18 @@
             this.lblDescInfo.TabIndex = 0;
             this.lblDescInfo.Text = "The description will show here.";
             // 
+            // lblRecordHistory
+            // 
+            this.lblRecordHistory.AutoSize = true;
+            this.lblRecordHistory.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblRecordHistory.ForeColor = System.Drawing.Color.Red;
+            this.lblRecordHistory.Location = new System.Drawing.Point(109, 86);
+            this.lblRecordHistory.Name = "lblRecordHistory";
+            this.lblRecordHistory.Size = new System.Drawing.Size(203, 16);
+            this.lblRecordHistory.TabIndex = 29;
+            this.lblRecordHistory.Text = "Last Recorded Saved Code:";
+            this.lblRecordHistory.Click += new System.EventHandler(this.lblRecordHistory_Click);
+            // 
             // frmDB
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -232,6 +245,7 @@
             this.AutoValidate = System.Windows.Forms.AutoValidate.EnableAllowFocusChange;
             this.BackColor = System.Drawing.SystemColors.ButtonHighlight;
             this.ClientSize = new System.Drawing.Size(719, 888);
+            this.Controls.Add(this.lblRecordHistory);
             this.Controls.Add(this.btnSaveForLayout);
             this.Controls.Add(this.btnPDFSaved);
             this.Controls.Add(this.gbxDescInfo);
@@ -249,6 +263,7 @@
             this.Name = "frmDB";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Load Longer Barcodes From Database";
+            this.Load += new System.EventHandler(this.frmDB_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbxBarcode)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.gbxDescInfo.ResumeLayout(false);
@@ -275,5 +290,6 @@
         private System.Windows.Forms.Button btnPDFSaved;
         private System.Windows.Forms.GroupBox gbxDescInfo;
         private System.Windows.Forms.Label lblDescInfo;
+        private System.Windows.Forms.Label lblRecordHistory;
     }
 }

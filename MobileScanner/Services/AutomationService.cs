@@ -11,7 +11,7 @@ namespace MobileScanner.Services
     public class AutomationService
     {
         private readonly HttpClient _httpClient;
-        private const string SERVER_URL = "http://192.168.1.186:5000";
+        private const string SERVER_URL = "http://192.168.50.225:5000";
 
         public AutomationService()
         {
@@ -42,7 +42,56 @@ namespace MobileScanner.Services
                 return (false, $"Connection error: {ex.Message}");
             }
         }
-        
+
+        public async Task<(bool Success, string Message)> SendBarcodeAsync(string barcode, int qty)
+        {
+            try
+            {
+                var content = new StringContent(
+                    JsonSerializer.Serialize(new { barcode, quantity = qty }),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var response = await _httpClient.PostAsync($"{SERVER_URL}/input_barcode", content);
+
+                var resultJson = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ApiResponse>(resultJson);
+
+                return (result?.Success ?? false, result?.Message ?? "Unknown error");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Connection error: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string Message)> SendBarcodeAsync(string barcode, int? qty = null, string unit = null)
+        {
+            try
+            {
+                var payload = new
+                {
+                    barcode,
+                    quantity = qty,
+                    unit
+                };
+
+                var content = new StringContent(
+                    JsonSerializer.Serialize(payload),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var response = await _httpClient.PostAsync($"{SERVER_URL}/input_barcode", content);
+                var resultJson = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ApiResponse>(resultJson);
+
+                return (result?.Success ?? false, result?.Message ?? "Unknown error");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Connection error: {ex.Message}");
+            }
+        }
         public async Task<(bool Success, string Message)> TriggerLoginAsync()
         {
             try

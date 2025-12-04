@@ -56,6 +56,8 @@
         <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
       </intent-filter>
     </receiver>
+    <uses-library android:name="androidx.window.extensions" android:required="false" />
+    <uses-library android:name="androidx.window.sidecar" android:required="false" />
     <!--
         Service for holding metadata. Cannot be instantiated.
         Metadata will be merged from other manifests.
@@ -63,8 +65,6 @@
     <service android:name="androidx.camera.core.impl.MetadataHolderService" android:enabled="false" android:exported="false" tools:ignore="Instantiatable,MissingServiceExportedEqualsTrue" tools:node="merge">
       <meta-data android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER" android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
     </service>
-    <uses-library android:name="androidx.window.extensions" android:required="false" />
-    <uses-library android:name="androidx.window.sidecar" android:required="false" />
     <service android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery" android:exported="false">
       <meta-data android:name="backend:com.google.android.datatransport.cct.CctBackendFactory" android:value="cct" />
     </service>

@@ -69,6 +69,11 @@ namespace BarcodeGenerator
             if (printDialog.ShowDialog() == DialogResult.OK)
             {
                 printDoc.Print();
+
+                if (!string.IsNullOrEmpty(tbxBarcode.Text))
+                {
+                    UpdateRecordHistory(tbxBarcode.Text);
+                }
             }
 
             SaveToPDF();
@@ -292,6 +297,9 @@ namespace BarcodeGenerator
             }
 
             barcodeQueue.Add(data);
+
+            UpdateRecordHistory(data.Code);
+
             MessageBox.Show($"Barcode has been saved! ({barcodeQueue.Count}/7)");
 
             tbxBarcode.Text = "";
@@ -331,9 +339,13 @@ namespace BarcodeGenerator
             int yOffset = e.MarginBounds.Top;
             int spacing = 25;
 
+            string lastBarcodeCode = "";
+
             for (int i = 0; i < barcodeQueue.Count && i < 7; i++)
             {
                 BarcodeData data = barcodeQueue[i];
+
+                lastBarcodeCode = data.Code;
 
                 e.Graphics.DrawImage(data.Image, e.MarginBounds.Left, yOffset);
 
@@ -366,6 +378,11 @@ namespace BarcodeGenerator
                 e.Graphics.DrawLine(Pens.Gray, e.MarginBounds.Left, lineY, e.MarginBounds.Right, lineY);
 
                 yOffset += imageHeight + 60 + spacing;
+            }
+
+            if (!string.IsNullOrEmpty(lastBarcodeCode))
+            {
+                UpdateRecordHistory(lastBarcodeCode);
             }
 
             foreach (var data in barcodeQueue)
@@ -401,6 +418,7 @@ namespace BarcodeGenerator
                 {
                     int pageWidth = 850;
                     int pageHeight = 1100;
+                    string lastBarcodeCode = "";
 
                     using (Bitmap bmp = new Bitmap(pageWidth, pageHeight))
                     using (Graphics g = Graphics.FromImage(bmp))
@@ -414,6 +432,8 @@ namespace BarcodeGenerator
                         for (int i = 0; i < barcodeQueue.Count && i < 7; i++)
                         {
                             BarcodeData data = barcodeQueue[i];
+
+                            lastBarcodeCode = data.Code;
 
                             // Draw barcode image
                             g.DrawImage(data.Image, leftMargin, yOffset);
@@ -453,6 +473,11 @@ namespace BarcodeGenerator
                         bmp.Save(saveDialog.FileName.Replace(".pdf", ".png"), System.Drawing.Imaging.ImageFormat.Png);
                     }
 
+                    if (!string.IsNullOrEmpty(lastBarcodeCode))
+                    {
+                        UpdateRecordHistory(lastBarcodeCode);
+                    }
+
                     MessageBox.Show("Batch saved successfully as PNG!\n\nNote: To save as actual PDF, you'll need to install a PDF library like iTextSharp or PdfSharp.");
                 }
                 catch (Exception ex)
@@ -460,6 +485,21 @@ namespace BarcodeGenerator
                     MessageBox.Show("Error saving batch: " + ex.Message);
                 }
             }
+        }
+
+        private void frmDB_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblRecordHistory_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void UpdateRecordHistory(string barcodeCode)
+        {
+            lblRecordHistory.Text = $"Last Recorded Saved Barcode: {barcodeCode}";
         }
     }
 }
