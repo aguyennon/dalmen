@@ -3,7 +3,7 @@
 import pdfplumber
 
 # Enter whatever path to check any PDF
-pdf_path = "G:/Alexis/QUINCAILERIE LION/CONFIRMATION/Dalmen3029.pdf"
+pdf_path = "G:/Alexis/NOVATECH GLAZING/COMMANDE/glazing - 309-02029.pdf"
 
 with pdfplumber.open(pdf_path) as pdf:
     for i, page in enumerate(pdf.pages):
