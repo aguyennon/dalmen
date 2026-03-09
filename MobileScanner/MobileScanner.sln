@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36212.18 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MobileScanner", "MobileScanner.csproj", "{37903B66-5155-4CBB-A55F-E529A4ADCBDF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{37903B66-5155-4CBB-A55F-E529A4ADCBDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37903B66-5155-4CBB-A55F-E529A4ADCBDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37903B66-5155-4CBB-A55F-E529A4ADCBDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37903B66-5155-4CBB-A55F-E529A4ADCBDF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BAC6A108-A844-4C02-8013-A580E2424538}
+	EndGlobalSection
+EndGlobal

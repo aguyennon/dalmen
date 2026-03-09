@@ -1,0 +1,11 @@
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\bin\Debug\DiagonalCutOptimizer.exe.config
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\bin\Debug\DiagonalCutOptimizer.exe
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\bin\Debug\DiagonalCutOptimizer.pdb
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.csproj.AssemblyReference.cache
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.frmMain.resources
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.Properties.Resources.resources
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.csproj.GenerateResource.cache
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.csproj.CoreCompileInputs.cache
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.exe
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.pdb
+C:\Users\alexis\source\repos\dalmen\DiagonalCutOptimizer\obj\Debug\DiagonalCutOptimizer.exe.config

@@ -1,0 +1,17 @@
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Release\Dalmen Orders App.exe.config
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Release\Dalmen Orders App.exe.manifest
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Release\Dalmen Orders App.application
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Release\Dalmen Orders App.exe
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\bin\Release\Dalmen Orders App.pdb
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\DalmenOrders.csproj.AssemblyReference.cache
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\DalmenOrders.Form1.resources
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\DalmenOrders.Form2.resources
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\DalmenOrders.InputForm.resources
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\DalmenOrders.Properties.Resources.resources
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\DalmenOrders.csproj.GenerateResource.cache
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\DalmenOrders.csproj.CoreCompileInputs.cache
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\Dalmen Orders App.exe.manifest
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\Dalmen Orders App.application
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\Dalmen Orders App.exe
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\Dalmen Orders App.pdb
+C:\Users\alexis\Source\Repos\dalmen\DalmenOrders\obj\Release\Dalmen Orders App.exe.config
