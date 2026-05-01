@@ -35,6 +35,8 @@
             this.tbxPO = new System.Windows.Forms.TextBox();
             this.lblPO = new System.Windows.Forms.Label();
             this.gbxTitle = new System.Windows.Forms.GroupBox();
+            this.tbxCommande = new System.Windows.Forms.TextBox();
+            this.label12 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.tbxName = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -96,7 +98,7 @@
             // 
             this.lblDate.AutoSize = true;
             this.lblDate.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblDate.Location = new System.Drawing.Point(61, 53);
+            this.lblDate.Location = new System.Drawing.Point(166, 50);
             this.lblDate.Name = "lblDate";
             this.lblDate.Size = new System.Drawing.Size(53, 20);
             this.lblDate.TabIndex = 1;
@@ -105,7 +107,7 @@
             // tbxDate
             // 
             this.tbxDate.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbxDate.Location = new System.Drawing.Point(125, 50);
+            this.tbxDate.Location = new System.Drawing.Point(230, 47);
             this.tbxDate.Name = "tbxDate";
             this.tbxDate.Size = new System.Drawing.Size(100, 26);
             this.tbxDate.TabIndex = 28;
@@ -113,7 +115,7 @@
             // tbxPO
             // 
             this.tbxPO.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbxPO.Location = new System.Drawing.Point(125, 85);
+            this.tbxPO.Location = new System.Drawing.Point(230, 82);
             this.tbxPO.Name = "tbxPO";
             this.tbxPO.Size = new System.Drawing.Size(100, 26);
             this.tbxPO.TabIndex = 29;
@@ -123,7 +125,7 @@
             // 
             this.lblPO.AutoSize = true;
             this.lblPO.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblPO.Location = new System.Drawing.Point(45, 88);
+            this.lblPO.Location = new System.Drawing.Point(150, 85);
             this.lblPO.Name = "lblPO";
             this.lblPO.Size = new System.Drawing.Size(63, 20);
             this.lblPO.TabIndex = 3;
@@ -131,6 +133,8 @@
             // 
             // gbxTitle
             // 
+            this.gbxTitle.Controls.Add(this.tbxCommande);
+            this.gbxTitle.Controls.Add(this.label12);
             this.gbxTitle.Controls.Add(this.label3);
             this.gbxTitle.Controls.Add(this.tbxName);
             this.gbxTitle.Controls.Add(this.label1);
@@ -141,12 +145,31 @@
             this.gbxTitle.Controls.Add(this.lblDate);
             this.gbxTitle.Controls.Add(this.lblPO);
             this.gbxTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.gbxTitle.Location = new System.Drawing.Point(405, 49);
+            this.gbxTitle.Location = new System.Drawing.Point(388, 49);
             this.gbxTitle.Name = "gbxTitle";
-            this.gbxTitle.Size = new System.Drawing.Size(316, 220);
+            this.gbxTitle.Size = new System.Drawing.Size(336, 256);
             this.gbxTitle.TabIndex = 5;
             this.gbxTitle.TabStop = false;
             this.gbxTitle.Text = "Purchase Order";
+            // 
+            // tbxCommande
+            // 
+            this.tbxCommande.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbxCommande.Location = new System.Drawing.Point(157, 211);
+            this.tbxCommande.Name = "tbxCommande";
+            this.tbxCommande.Size = new System.Drawing.Size(173, 26);
+            this.tbxCommande.TabIndex = 32;
+            // 
+            // label12
+            // 
+            this.label12.AutoSize = true;
+            this.label12.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label12.Location = new System.Drawing.Point(6, 214);
+            this.label12.Name = "label12";
+            this.label12.Size = new System.Drawing.Size(144, 20);
+            this.label12.TabIndex = 31;
+            this.label12.Text = "# de Commande:";
+            this.label12.Click += new System.EventHandler(this.label12_Click);
             // 
             // label3
             // 
@@ -160,7 +183,7 @@
             // tbxName
             // 
             this.tbxName.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbxName.Location = new System.Drawing.Point(125, 141);
+            this.tbxName.Location = new System.Drawing.Point(157, 144);
             this.tbxName.Name = "tbxName";
             this.tbxName.Size = new System.Drawing.Size(173, 26);
             this.tbxName.TabIndex = 30;
@@ -169,7 +192,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(48, 141);
+            this.label1.Location = new System.Drawing.Point(90, 150);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(60, 20);
             this.label1.TabIndex = 5;
@@ -178,7 +201,7 @@
             // tbxSupplierName
             // 
             this.tbxSupplierName.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbxSupplierName.Location = new System.Drawing.Point(125, 176);
+            this.tbxSupplierName.Location = new System.Drawing.Point(157, 179);
             this.tbxSupplierName.Name = "tbxSupplierName";
             this.tbxSupplierName.Size = new System.Drawing.Size(173, 26);
             this.tbxSupplierName.TabIndex = 8;
@@ -187,7 +210,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(25, 179);
+            this.label2.Location = new System.Drawing.Point(70, 182);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(80, 20);
             this.label2.TabIndex = 7;
@@ -849,6 +872,8 @@
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.TextBox tbxCommande;
+        private System.Windows.Forms.Label label12;
     }
 }
 

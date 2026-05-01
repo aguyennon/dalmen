@@ -1,10 +1,17 @@
-﻿using MobileScanner.Services;
-using MobileScanner.Views;
-using Microsoft.Extensions.DependencyInjection;
-using CommunityToolkit.Maui;
-using ClosedXML.Excel;
+﻿using Microsoft.Maui;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Storage;
+using Microsoft.Maui.ApplicationModel;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Maui.Media;
+using Microsoft.Maui.Devices;
 using System.IO;
-using Microsoft.Office.Interop.Excel;
+using MobileScanner.Services;
+using ClosedXML.Excel;
+
 
 
 namespace MobileScanner;

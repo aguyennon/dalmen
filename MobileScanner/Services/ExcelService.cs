@@ -2,6 +2,11 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Maui.Storage;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls;
+using System.Linq;
+
 
 namespace MobileScanner.Services
 {
@@ -19,7 +24,7 @@ namespace MobileScanner.Services
         {
             try
             {
-                string filePath = Path.Combine(FileSystem.Current.AppDataDirectory, "scanthermos.xlsm");
+                string filePath = Path.Combine(FileSystem.Current.AppDataDirectory, "scanthermos.xlsx");
 
                 // Debug: Check if file already exists
                 System.Diagnostics.Debug.WriteLine($"Target file path: {filePath}");

@@ -7,6 +7,10 @@ using MobileScanner.Views;
 using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 using Plugin.Maui.OCR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Hosting;
+
 
 namespace MobileScanner
 {

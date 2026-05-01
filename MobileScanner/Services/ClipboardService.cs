@@ -1,4 +1,9 @@
 ﻿using System.Text;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 
 
@@ -25,7 +30,7 @@ namespace MobileScanner.Services
                 if (string.IsNullOrWhiteSpace(text))
                     return false;
 
-                await Clipboard.SetTextAsync(text);
+                await Microsoft.Maui.ApplicationModel.DataTransfer.Clipboard.SetTextAsync(text);
 
                 // Add to history (avoid duplicates)
                 if (!_clipboardHistory.Contains(text))

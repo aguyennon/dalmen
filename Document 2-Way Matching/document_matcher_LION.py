@@ -241,174 +241,73 @@ class DocumentMatcherGUI:
 
 
     def create_widgets(self):
-        # Title
-        title_frame = tk.Frame(self.root, bg=self.primary_color, height=80)
-        title_frame.pack(fill=tk.X)
-        title_frame.pack_propagate(False)
-        
-        title_label = tk.Label(
-            title_frame,
-            text="Document Matcher",
-            font=("Arial", 24, "bold"),
-            bg=self.primary_color,
-            fg="white"
-        )
-        
-        title_label.pack(expand=True)
-        
-        # Container for subtitle and log button
-        bottom_header = tk.Frame(title_frame, bg=self.primary_color)
-        bottom_header.pack(fill=tk.X, padx=20)
-        
-        subtitle_label = tk.Label(
-            bottom_header,
-            text="Upload two PDF documents to compare",
-            font=("Arial", 10),
-            bg=self.primary_color,
-            fg="white"
-        )
-        subtitle_label.pack(side=tk.LEFT)
+        header = tk.Frame(self.root, bg=self.primary_color)
+        header.pack(fill=tk.X)
 
-        self.print_btn = tk.Button(
-            bottom_header,
-            text="Print Log",
-            font=("Arial", 9, "bold"),
-            bg="#5568d3",
-            fg="#FFFFFF",
-            cursor="hand2",
-            command=self.print_log,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
-            state=tk.DISABLED
-        )
-        self.print_btn.pack(side=tk.RIGHT)
-        
-        # Small log button in header
-        self.log_btn = tk.Button(
-            bottom_header,
-            text="Log",
-            font=("Arial", 9, "bold"),
-            bg="#5568d3",
-            fg="#FFFFFF",
-            cursor="hand2",
-            command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
-            state=tk.DISABLED
-        )
-        self.log_btn.pack(side=tk.RIGHT)
-        
-        # Main content
-        content_frame = tk.Frame(self.root, bg=self.bg_color, padx=30, pady=30)
-        content_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Document 1
-        doc1_frame = tk.LabelFrame(
-            content_frame,
-            text="Document 1",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc1_frame.pack(fill=tk.X, pady=(0, 15))
-        
-        self.file1_label = tk.Label(
-            doc1_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
-        )
-        self.file1_label.pack(fill=tk.X, pady=(0, 10))
-        
-        btn1 = tk.Button(
-            doc1_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(1),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn1.pack()
- 
-        # Document 2
-        doc2_frame = tk.LabelFrame(
-            content_frame,
-            text="Document 2",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc2_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        self.file2_label = tk.Label(
-            doc2_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
-        )
-        self.file2_label.pack(fill=tk.X, pady=(0, 10))
-        
-        btn2 = tk.Button(
-            doc2_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(2),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn2.pack()
-        
-        # Compare button
-        self.compare_btn = tk.Button(
-            content_frame,
-            text="⚡ Compare Documents",
-            font=("Arial", 14, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=self.compare_documents,
-            relief=tk.FLAT,
-            padx=30,
-            pady=15,
-            state=tk.DISABLED
-        )
-        self.compare_btn.pack(fill=tk.X, pady=(0, 20))
-        
-        
-        # Progress bar
-        self.progress = ttk.Progressbar(
-            content_frame,
-            mode='indeterminate',
-            length=300
-        )
-        
-        # Result frame
-        self.result_frame = tk.Frame(content_frame, bg=self.bg_color)
-        self.result_frame.pack(fill=tk.BOTH, expand=True)
+        tk.Label(header, text="LION Matcher", font=("Arial", 22, "bold"),
+                bg=self.primary_color, fg="white").pack(side=tk.LEFT, padx=24, pady=16)
+
+        self.log_btn = tk.Button(header, text="📋  View Log", font=("Arial", 10, "bold"),
+                                bg="#5568d3", fg="white", cursor="hand2",
+                                command=self.show_log_window, relief=tk.FLAT,
+                                padx=14, pady=8, state=tk.DISABLED)
+        self.log_btn.pack(side=tk.RIGHT, padx=20, pady=14)
+
+        tk.Label(header, text="Match Dalmen orders with Lion invoices",
+                font=("Arial", 10), bg=self.primary_color, fg="#ccd4ff").pack(side=tk.RIGHT, padx=4)
+
+        body = tk.Frame(self.root, bg=self.bg_color, padx=24, pady=20)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        docs_row = tk.Frame(body, bg=self.bg_color)
+        docs_row.pack(fill=tk.X)
+        docs_row.columnconfigure(0, weight=1)
+        docs_row.columnconfigure(1, weight=1)
+
+        card1 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card1.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
+        tk.Frame(card1, bg=self.primary_color, height=4).pack(fill=tk.X)
+        inner1 = tk.Frame(card1, bg="white", padx=18, pady=16)
+        inner1.pack(fill=tk.BOTH, expand=True)
+        tk.Label(inner1, text="DOC 1", font=("Arial", 9, "bold"),
+                bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner1, text="Dalmen Purchase Order", font=("Arial", 8),
+                bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+        self.file1_label = tk.Label(inner1, text="No file selected", font=("Arial", 9),
+                                    bg="white", fg="#aaa", anchor="w", wraplength=260, justify="left")
+        self.file1_label.pack(fill=tk.X, pady=(0, 12))
+        tk.Button(inner1, text="📁  Browse PDF", font=("Arial", 10, "bold"),
+                bg=self.primary_color, fg="white", cursor="hand2",
+                command=lambda: self.browse_file(1), relief=tk.FLAT,
+                padx=16, pady=9).pack(fill=tk.X)
+
+        card2 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card2.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
+        tk.Frame(card2, bg=self.primary_color, height=4).pack(fill=tk.X)
+        inner2 = tk.Frame(card2, bg="white", padx=18, pady=16)
+        inner2.pack(fill=tk.BOTH, expand=True)
+        tk.Label(inner2, text="DOC 2", font=("Arial", 9, "bold"),
+                bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner2, text="Lion Invoice", font=("Arial", 8),
+                bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+        self.file2_label = tk.Label(inner2, text="No file selected", font=("Arial", 9),
+                                    bg="white", fg="#aaa", anchor="w", wraplength=260, justify="left")
+        self.file2_label.pack(fill=tk.X, pady=(0, 12))
+        tk.Button(inner2, text="📁  Browse PDF", font=("Arial", 10, "bold"),
+                bg=self.primary_color, fg="white", cursor="hand2",
+                command=lambda: self.browse_file(2), relief=tk.FLAT,
+                padx=16, pady=9).pack(fill=tk.X)
+
+        self.compare_btn = tk.Button(body, text="⚡  Compare Documents",
+                                    font=("Arial", 13, "bold"), bg=self.primary_color,
+                                    fg="white", cursor="hand2", command=self.compare_documents,
+                                    relief=tk.FLAT, padx=30, pady=14, state=tk.DISABLED)
+        self.compare_btn.pack(fill=tk.X, pady=(18, 0))
+
+        self.progress = ttk.Progressbar(body, mode='indeterminate')
+
+        self.result_frame = tk.Frame(body, bg=self.bg_color)
+        self.result_frame.pack(fill=tk.BOTH, expand=True, pady=(16, 0))
 
     def compare_documents(self):
         for widget in self.result_frame.winfo_children():
@@ -487,10 +386,31 @@ class DocumentMatcherGUI:
                 if page_text:
                     text += page_text + "\n"
         return text
+
+    def normalize_lion_code(self, code: str) -> str:
+        code = code.replace('-', '')
+        if not code.startswith('TH'):
+            code = 'TH' + code
+        return code
+
+    
+    def lion_codes_match(self, code1: str, code2: str) -> bool:
+        c1 = self.normalize_lion_code(code1)
+        c2 = self.normalize_lion_code(code2)
+
+        return c1.startswith(c2) or c2.startswith(c1)
+
     
     def extract_order_number(self, text: str) -> str:
+        print(f"DEBUG order number text:\n{text[:500]}") 
         """Extract order number"""
         patterns = [
+            r'K0C\s+2B0\s+(\d{4})',
+            r'CUSTOMERORDERNO\.?\s*[\n\r]+\s*(\d+)',
+            r'PO\s+number\s*[\n\r]+\s*(\d+)',
+            r'N°?\s*COMMANDE\s+DU\s+CLIENT\s*[\n\r]+\s*(\d+)',
+            r'CUSTOMER\s*ORDER\s*NO\.?\s*[\n\r]+\s*(\d+)',
+            r'PO\s+number\s*[:\s]+(\d+)',
             r'Commande\s+n°\s*(\w+)',
             r'Numéro de PO\s+(\d+)',
             r'(?:Order|PO)\s*[#:]*\s*(\d+)',
@@ -500,7 +420,7 @@ class DocumentMatcherGUI:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 return match.group(1).strip()
-        return "Unknown"
+        return "Undetected"
     
     def extract_total(self, text: str) -> float:
         """Extract document total"""
@@ -612,6 +532,37 @@ class DocumentMatcherGUI:
         
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
+
+    def parse_lion_facture(self, text_lines) -> List[LineItem]:
+        items = []
+        if isinstance(text_lines, str):
+            text_lines = text_lines.split('\n')
+
+        print(f"\nDEBUG: Parsing Lion facture - {len(text_lines)} lines")
+
+        for line in text_lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            match = re.match(r'^(\d+)\s+(TH\d+)\s+.+?\s+EA\s+([\d\.]+)\s+([\d\.]+)\s*$', line)
+            if match:
+                qty = float(match.group(1))
+                code = match.group(2)
+                unit_price = float(match.group(3))
+                total = float(match.group(4))
+                print(f"  ✓ Found [Lion Facture]: {code} qty={qty} unit=${unit_price} total=${total}")
+                items.append(LineItem(
+                    product_code=code,
+                    quantity=qty,
+                    unit_price=unit_price,
+                    total=total
+                ))
+            elif 'TH' in line and len(line) > 20:
+                print(f" Lion facture line didn't match: {line[:60]}")
+
+        print(f"DEBUG: Total Lion facture items: {len(items)}")
+        return items
     
     def parse_document(self, pdf_path: str) -> OrderDocument:
     
@@ -631,17 +582,21 @@ class DocumentMatcherGUI:
         print(f"  Contains 'DALMEN': {'DALMEN' in full_text_upper}")
         print(f"  Contains 'ORDER CONFIRMATION': {'ORDER CONFIRMATION' in full_text_upper}")
         print(f"  Contains 'QUINCAILLERIE LION': {'QUINCAILLERIE LION' in full_text_upper}")
-        
-        # Check if it's a Dalmen confirmation
+
         is_dalmen_confirmation = 'DALMEN' in full_text_upper and 'CONFIRMATION' in full_text_upper
-        
-        # Check if it's a LION order
-        is_lion_order = 'QUINCAILLERIE LION' in full_text_upper or 'LION' in full_text_upper
+
+        is_lion_facture = ('RICHELIEU' in full_text_upper or 'N° PRODUIT' in full_text_upper or 
+                   'PRIX UNITAIRE' in full_text_upper)
+
+        is_lion_order = ('QUINCAILLERIE LION' in full_text_upper or 'LION' in full_text_upper) and not is_lion_facture
         
         # Parse based on document type
         if is_dalmen_confirmation:
             print("✓ Detected: DALMEN CONFIRMATION")
             line_items = self.parse_dalmen_confirmation(text_lines)
+        elif is_lion_facture:
+            print("✓ Detected: LION FACTURE")
+            line_items = self.parse_lion_facture(text_lines)
         elif is_lion_order:
             print("✓ Detected: LION ORDER")
             line_items = self.extract_line_items(full_text)
@@ -701,6 +656,7 @@ class DocumentMatcherGUI:
             log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
 
         matched = 0
+        scored = 0
 
         log.append("\n" + "-"*60)
         log.append("MATCHING PROCESS:")
@@ -710,6 +666,7 @@ class DocumentMatcherGUI:
             total1 = data1["total"]
             label1 = data1["label"]
             best_match = None
+            best_match_total = 0.0
             best_diff = float("inf")
             best_sim = 0
 
@@ -717,43 +674,59 @@ class DocumentMatcherGUI:
                 total2 = data2["total"]
                 label2 = data2["label"]
 
-                sim = self.calculate_similarity(
-                    self.normalize_code(label1),
-                    self.normalize_code(label2)
-                )
+                if self.lion_codes_match(label1, label2):
+                    sim = 1.0
+                else:
+                    sim = self.calculate_similarity(
+                        self.normalize_code(label1),
+                        self.normalize_code(label2)
+                    )
+                    if sim < 0.85:
+                        sim = 0.0
+
                 diff = abs(total1 - total2)
 
                 if sim > 0.60 and diff < best_diff:
                     best_match = label2
+                    best_match_total = total2
                     best_diff = diff
                     best_sim = sim
             
-            threshold = max(5.0, total1 * 0.10)
-            matched_this = best_match and best_diff < threshold
-            
             log.append(f"\n{label1} (${total1:.2f})")
-            if best_match:
-                log.append(f"  Best match: {best_match} (${total1-best_diff:.2f})")
-                log.append(f"  Similarity: {best_sim:.1%}, Diff: ${best_diff:.2f}, Threshold: ${threshold:.2f}")
-                log.append(f"  Result: {'✓ MATCH' if matched_this else '✗ NO MATCH'}")
-            else:
-                log.append(f"  No match found")
+
+            if not best_match:
+                log.append(f" Not found on facture - skipped")
+                continue
             
+            scored += 1
+            threshold = max(5.0, total1 * 0.15)
+            matched_this = best_diff < threshold
+
+            log.append(f"  Best match: {best_match} (${total1-best_diff:.2f})")
+            log.append(f"  Similarity: {best_sim:.1%}, Diff: ${best_diff:.2f}, Threshold: ${threshold:.2f}")
+
+            if total1 > 0:
+                price_diff_pct = abs(total1 - best_match_total) / total1 * 100
+                price_ok = price_diff_pct <= 15
+                log.append(f"  💲 Price: PO ${total1:.2f} | Facture ${best_match_total:.2f} | Diff: {price_diff_pct:.1f}% → {'✅' if price_ok else '❌'}")
+                if not price_ok:
+                    matched_this = False
+            
+            log.append(f"  Result: {'✓ MATCH' if matched_this else '✗ NO MATCH'}")
+
             if matched_this:
                 matched += 1
-        
-        total_items = max(len(agg1), len(agg2))
-        match_percentage = (matched / total_items * 100) if total_items > 0 else 0
+            
+        match_percentage = (matched / scored * 100) if scored > 0 else 0
         documents_match = match_percentage >= 70
         
         log.append("\n" + "="*60)
-        log.append(f"FINAL RESULT: {matched}/{total_items} items matched ({match_percentage:.1f}%)")
+        log.append(f"FINAL RESULT: {matched}/{scored} items matched ({match_percentage:.1f}%)")
         log.append(f"Documents match: {documents_match}")
         log.append("="*60)
         
         # Store log
         self.match_log = "\n".join(log)
-        
         # Also print to console
         print("\n" + self.match_log)
 
@@ -761,7 +734,7 @@ class DocumentMatcherGUI:
             "match": documents_match,
             "confidence": match_percentage,
             "matched_items": matched,
-            "total_items": total_items,
+            "total_items": scored,
             "order1": doc1.order_number,
             "order2": doc2.order_number,
             "total1": doc1.total,
@@ -770,107 +743,60 @@ class DocumentMatcherGUI:
         }
     
     def display_result(self, result):
-        """Display comparison result"""
         self.progress.stop()
         self.progress.pack_forget()
         self.compare_btn.config(state=tk.NORMAL)
-        self.log_btn.config(state=tk.NORMAL, bg=self.primary_color)
-        self.print_btn.config(state=tk.NORMAL, bg=self.primary_color)
-        
-        # Clear result frame
+        self.log_btn.config(state=tk.NORMAL)
+
         for widget in self.result_frame.winfo_children():
             widget.destroy()
-        
-        # Result color
-        if result['match']:
-            bg_color = self.success_color
-            icon = "✅"
-            title = "DOCUMENTS MATCH"
-            message = "The documents are consistent!"
-        else:
-            bg_color = self.error_color
-            icon = "❌"
-            title = "DOCUMENTS DO NOT MATCH"
-            message = "Discrepancies found."
-        
-        # Result card
-        result_card = tk.Frame(self.result_frame, bg=bg_color, padx=20, pady=20)
-        result_card.pack(fill=tk.BOTH, expand=True)
-        
-        # Icon and title
-        icon_label = tk.Label(
-            result_card,
-            text=icon,
-            font=("Arial", 48),
-            bg=bg_color,
-            fg="white"
-        )
-        icon_label.pack()
-        
-        title_label = tk.Label(
-            result_card,
-            text=title,
-            font=("Arial", 18, "bold"),
-            bg=bg_color,
-            fg="white"
-        )
-        title_label.pack(pady=(10, 5))
-        
-        message_label = tk.Label(
-            result_card,
-            text=message,
-            font=("Arial", 11),
-            bg=bg_color,
-            fg="white"
-        )
-        message_label.pack(pady=(0, 20))
-        
-        # Details frame
-        details_frame = tk.Frame(result_card, bg="white", padx=15, pady=15)
-        details_frame.pack(fill=tk.BOTH, expand=True)
-        
-        details = [
-            ("Order Numbers:", f"{result['order1']} ↔ {result['order2']}"),
-            ("Confidence:", f"{result['confidence']:.1f}%"),
-            ("Matched Items:", f"{result['matched_items']} / {result['total_items']}"),
-            ("Document Totals:", f"${result['total1']:.2f} ↔ ${result['total2']:.2f}"),
-            ("Difference:", f"${result['total_diff']:.2f}")
-        ]
-        
-        for i, (label, value) in enumerate(details):
-            row_frame = tk.Frame(details_frame, bg="white")
-            row_frame.pack(fill=tk.X, pady=5)
-            
-            tk.Label(
-                row_frame,
-                text=label,
-                font=("Arial", 10, "bold"),
-                bg="white",
-                anchor="w"
-            ).pack(side=tk.LEFT)
-            
-            tk.Label(
-                row_frame,
-                text=value,
-                font=("Arial", 10),
-                bg="white",
-                anchor="e"
-            ).pack(side=tk.RIGHT)
-            
-            # View Details button
-        tk.Button(
-            details_frame,
-            text="📋 View Detailed Log",
-            font=("Arial", 10, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            cursor="hand2",
-            command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=15,
-            pady=8
-        ).pack(pady=(15, 0))
-        
+
+        is_match = result['match']
+        accent = self.success_color if is_match else self.error_color
+
+        card = tk.Frame(self.result_frame, bg="white", bd=1, relief=tk.SOLID)
+        card.pack(fill=tk.BOTH, expand=True)
+        tk.Frame(card, bg=accent, height=5).pack(fill=tk.X)
+
+        inner = tk.Frame(card, bg="white", padx=24, pady=18)
+        inner.pack(fill=tk.BOTH, expand=True)
+
+        top_row = tk.Frame(inner, bg="white")
+        top_row.pack(fill=tk.X)
+
+        icon = "✅" if is_match else "❌"
+        verdict = "DOCUMENTS MATCH" if is_match else "DOCUMENTS DO NOT MATCH"
+
+        tk.Label(top_row, text=icon, font=("Arial", 28), bg="white").pack(side=tk.LEFT)
+        tk.Label(top_row, text=verdict, font=("Arial", 16, "bold"),
+                bg="white", fg=accent).pack(side=tk.LEFT, padx=12)
+        tk.Label(top_row, text=f"{result['confidence']:.0f}% confidence",
+                font=("Arial", 11), bg="white", fg="#666").pack(side=tk.RIGHT)
+
+        tk.Frame(inner, bg="#e0e0e0", height=1).pack(fill=tk.X, pady=(14, 14))
+
+        stats = tk.Frame(inner, bg="white")
+        stats.pack(fill=tk.X, pady=(0, 14))
+
+        def stat_box(parent, label, value, col, font_size=14):
+            box = tk.Frame(parent, bg="#f8f8f8", padx=14, pady=10, bd=1, relief=tk.SOLID)
+            box.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=(0 if col == 0 else 4, 0))
+            tk.Label(box, text=value, font=("Arial", font_size, "bold"),
+                    bg="#f8f8f8", fg="#222").pack()
+            tk.Label(box, text=label, font=("Arial", 8),
+                    bg="#f8f8f8", fg="#888").pack()
+
+        order_icon = "✅" if result['order1'] == result['order2'] else "❌"
+        stat_box(stats, "PO Numbers", f"{order_icon}  {result['order1']} / {result['order2']}", 0)
+        stat_box(stats, "Items Matched", f"{result['matched_items']} / {result['total_items']}", 1)
+        stat_box(stats, "Confidence", f"{result['confidence']:.1f}%", 2)
+        price_ok = result['confidence'] >= 70 
+        stat_box(stats, "Price Check", "✅" if price_ok else "❌", 3)
+
+        tk.Button(inner, text="📋  View Detailed Log", font=("Arial", 10, "bold"),
+                bg=self.primary_color, fg="white", cursor="hand2",
+                command=self.show_log_window, relief=tk.FLAT,
+                padx=18, pady=9).pack(fill=tk.X)
 
     
     

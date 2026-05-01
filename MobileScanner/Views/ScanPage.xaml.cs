@@ -10,6 +10,7 @@ using Syncfusion.Pdf.Graphics;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
@@ -17,6 +18,12 @@ using ClosedXML.Excel;
 using System.Collections.Generic;
 using CommunityToolkit.Maui.Media;
 using Plugin.Maui.OCR;
+using Microsoft.Maui.Devices;
+using Microsoft.Maui;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
+using Microsoft.Maui.Media;
+
+
 
 namespace MobileScanner.Views;
 

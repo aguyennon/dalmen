@@ -26,6 +26,7 @@ class LineItem:
     quantity: float
     unit_price: float
     total: float
+    specs: dict = None
 
 
 @dataclass
@@ -57,6 +58,8 @@ class DocumentMatcherGUI:
         
         # Create UI
         self.create_widgets()
+
+        self.load_viscan_price_list()
 
     def show_log_window(self):
         log_window = tk.Toplevel(self.root)
@@ -123,174 +126,73 @@ class DocumentMatcherGUI:
 
 
     def create_widgets(self):
-        # Title
-        title_frame = tk.Frame(self.root, bg=self.primary_color, height=80)
-        title_frame.pack(fill=tk.X)
-        title_frame.pack_propagate(False)
-        
-        title_label = tk.Label(
-            title_frame,
-            text="🤖 AI Document Matcher",
-            font=("Arial", 24, "bold"),
-            bg=self.primary_color,
-            fg="white"
-        )
-        
-        title_label.pack(expand=True)
-        
-        # Container for subtitle and log button
-        bottom_header = tk.Frame(title_frame, bg=self.primary_color)
-        bottom_header.pack(fill=tk.X, padx=20)
-        
-        subtitle_label = tk.Label(
-            bottom_header,
-            text="Upload two PDF documents to compare",
-            font=("Arial", 10),
-            bg=self.primary_color,
-            fg="white"
-        )
-        subtitle_label.pack(side=tk.LEFT)
+        header = tk.Frame(self.root, bg=self.primary_color)
+        header.pack(fill=tk.X)
 
-        self.print_btn = tk.Button(
-            bottom_header,
-            text="Print Log",
-            font=("Arial", 9, "bold"),
-            bg="#5568d3",
-            fg="#FFFFFF",
-            cursor="hand2",
-            command=self.print_log,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
-            state=tk.DISABLED
-        )
-        self.print_btn.pack(side=tk.RIGHT)
-        
-        # Small log button in header
-        self.log_btn = tk.Button(
-            bottom_header,
-            text="Log",
-            font=("Arial", 9, "bold"),
-            bg="#5568d3",
-            fg="#FFFFFF",
-            cursor="hand2",
-            command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
-            state=tk.DISABLED
-        )
-        self.log_btn.pack(side=tk.RIGHT)
-        
-        # Main content
-        content_frame = tk.Frame(self.root, bg=self.bg_color, padx=30, pady=30)
-        content_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Document 1
-        doc1_frame = tk.LabelFrame(
-            content_frame,
-            text="Document 1",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc1_frame.pack(fill=tk.X, pady=(0, 15))
-        
-        self.file1_label = tk.Label(
-            doc1_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
-        )
-        self.file1_label.pack(fill=tk.X, pady=(0, 10))
-        
-        btn1 = tk.Button(
-            doc1_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(1),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn1.pack()
- 
-        # Document 2
-        doc2_frame = tk.LabelFrame(
-            content_frame,
-            text="Document 2",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc2_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        self.file2_label = tk.Label(
-            doc2_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
-        )
-        self.file2_label.pack(fill=tk.X, pady=(0, 10))
-        
-        btn2 = tk.Button(
-            doc2_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(2),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn2.pack()
-        
-        # Compare button
-        self.compare_btn = tk.Button(
-            content_frame,
-            text="⚡ Compare Documents",
-            font=("Arial", 14, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=self.compare_documents,
-            relief=tk.FLAT,
-            padx=30,
-            pady=15,
-            state=tk.DISABLED
-        )
-        self.compare_btn.pack(fill=tk.X, pady=(0, 20))
-        
-        
-        # Progress bar
-        self.progress = ttk.Progressbar(
-            content_frame,
-            mode='indeterminate',
-            length=300
-        )
-        
-        # Result frame
-        self.result_frame = tk.Frame(content_frame, bg=self.bg_color)
-        self.result_frame.pack(fill=tk.BOTH, expand=True)
+        tk.Label(header, text="VISCAN Matcher", font=("Arial", 22, "bold"),
+                bg=self.primary_color, fg="white").pack(side=tk.LEFT, padx=24, pady=16)
+
+        self.log_btn = tk.Button(header, text="📋  View Log", font=("Arial", 10, "bold"),
+                                bg="#5568d3", fg="white", cursor="hand2",
+                                command=self.show_log_window, relief=tk.FLAT,
+                                padx=14, pady=8, state=tk.DISABLED)
+        self.log_btn.pack(side=tk.RIGHT, padx=20, pady=14)
+
+        tk.Label(header, text="Match Dalmen orders with Viscan invoices",
+                font=("Arial", 10), bg=self.primary_color, fg="#ccd4ff").pack(side=tk.RIGHT, padx=4)
+
+        body = tk.Frame(self.root, bg=self.bg_color, padx=24, pady=20)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        docs_row = tk.Frame(body, bg=self.bg_color)
+        docs_row.pack(fill=tk.X)
+        docs_row.columnconfigure(0, weight=1)
+        docs_row.columnconfigure(1, weight=1)
+
+        card1 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card1.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
+        tk.Frame(card1, bg=self.primary_color, height=4).pack(fill=tk.X)
+        inner1 = tk.Frame(card1, bg="white", padx=18, pady=16)
+        inner1.pack(fill=tk.BOTH, expand=True)
+        tk.Label(inner1, text="DOC 1", font=("Arial", 9, "bold"),
+                bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner1, text="Dalmen Purchase Order", font=("Arial", 8),
+                bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+        self.file1_label = tk.Label(inner1, text="No file selected", font=("Arial", 9),
+                                    bg="white", fg="#aaa", anchor="w", wraplength=260, justify="left")
+        self.file1_label.pack(fill=tk.X, pady=(0, 12))
+        tk.Button(inner1, text="📁  Browse PDF", font=("Arial", 10, "bold"),
+                bg=self.primary_color, fg="white", cursor="hand2",
+                command=lambda: self.browse_file(1), relief=tk.FLAT,
+                padx=16, pady=9).pack(fill=tk.X)
+
+        card2 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card2.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
+        tk.Frame(card2, bg=self.primary_color, height=4).pack(fill=tk.X)
+        inner2 = tk.Frame(card2, bg="white", padx=18, pady=16)
+        inner2.pack(fill=tk.BOTH, expand=True)
+        tk.Label(inner2, text="DOC 2", font=("Arial", 9, "bold"),
+                bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner2, text="Viscan Invoice", font=("Arial", 8),
+                bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+        self.file2_label = tk.Label(inner2, text="No file selected", font=("Arial", 9),
+                                    bg="white", fg="#aaa", anchor="w", wraplength=260, justify="left")
+        self.file2_label.pack(fill=tk.X, pady=(0, 12))
+        tk.Button(inner2, text="📁  Browse PDF", font=("Arial", 10, "bold"),
+                bg=self.primary_color, fg="white", cursor="hand2",
+                command=lambda: self.browse_file(2), relief=tk.FLAT,
+                padx=16, pady=9).pack(fill=tk.X)
+
+        self.compare_btn = tk.Button(body, text="⚡  Compare Documents",
+                                    font=("Arial", 13, "bold"), bg=self.primary_color,
+                                    fg="white", cursor="hand2", command=self.compare_documents,
+                                    relief=tk.FLAT, padx=30, pady=14, state=tk.DISABLED)
+        self.compare_btn.pack(fill=tk.X, pady=(18, 0))
+
+        self.progress = ttk.Progressbar(body, mode='indeterminate')
+
+        self.result_frame = tk.Frame(body, bg=self.bg_color)
+        self.result_frame.pack(fill=tk.BOTH, expand=True, pady=(16, 0))
 
     def compare_documents(self):
         for widget in self.result_frame.winfo_children():
@@ -347,6 +249,7 @@ class DocumentMatcherGUI:
 
             print("Matching documents...")
             result = self.match_documents(doc1, doc2)
+            result['order2'] = result['order1']
             print(f"Match result: {result}")
             
             print("Displaying result...")
@@ -371,18 +274,44 @@ class DocumentMatcherGUI:
         return text
     
     def extract_order_number(self, text: str) -> str:
-        """Extract order number"""
         patterns = [
+            r'COMMANDE\s+CLIENT\s*#?\s*\.?\s*(\d{5,})',
+            r'Purchase\s+Order\s+Bon\s+de\s+Commande\s+#\s*(\d+)',
+            r'Bon\s+de\s+Commande\s+#\s*(\d+)',
             r'Commande\s+n°\s*(\w+)',
             r'Numéro de PO\s+(\d+)',
             r'(?:Order|PO)\s*[#:]*\s*(\d+)',
             r'commande\s+(\d+)',
+            r'#\s*(\d{5,})',
         ]
-        for pattern in patterns:
+
+        print(f"\nDEBUG: Searching for order number...")
+        print(f"DEBUG: Text preview: {text[:300]}")
+
+        for i, pattern in enumerate(patterns):
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                return match.group(1).strip()
+                order_num = match.group(1).strip()
+                print(f" Pattern {i+1} matched: {order_num}")
+                return order_num
+
+        print(f" Not Found in any pattern")
         return "Unknown"
+
+    def extract_viscan_specs(self, text: str) -> Dict[str, str]:
+        specs = {}
+
+        size_match = re.search(r'#?(\d+)\s*[Xx×]\s*(\d+)"?', text)
+        if size_match:
+            specs['size'] = f"{size_match.group(1)}X{size_match.group(2)}"
+
+        head_types = ['TRUSS', 'FLAT', 'PANWASHER', 'FLATUNDERCUT', 'PAN', 'OVAL', 'ROUND']
+        for head in head_types:  
+            if re.search(rf"['\"]?{head}['\"]?", text, re.IGNORECASE):
+                specs['head'] = head
+                break
+        
+        return specs
     
     def extract_total(self, text: str) -> float:
         """Extract document total"""
@@ -408,7 +337,7 @@ class DocumentMatcherGUI:
         
         print(f"\nDEBUG: Parsing {len(lines)} lines")
         
-        # Join lines that are continuations (like "CL-PB-350187-" + "BK")
+        # Join lines that are continuation
         cleaned_lines = []
         i = 0
         while i < len(lines):
@@ -416,7 +345,7 @@ class DocumentMatcherGUI:
             # If line ends with hyphen and next line exists
             if line.endswith('-') and i + 1 < len(lines):
                 next_line = lines[i + 1].strip()
-                # If next line is short (< 20 chars) and alphanumeric, join them
+                # If next line is < 20 chars and alphanumeric, join them
                 if len(next_line) < 20 and next_line and not re.search(r'[\$,\.]', next_line):
                     print(f"  DEBUG: Joining '{line}' + '{next_line}'")
                     line = line + next_line
@@ -428,7 +357,39 @@ class DocumentMatcherGUI:
         
         for line in cleaned_lines:
             line = line.strip()
-            
+
+            if 'VA07' in line or '36.8' in line:
+                print(f" DEBUG FACTURE LINE: '{line}")
+
+            m_viscan_facture = re.search(r'([A-Z]{2}\d{2}\.\d+).+?(\d{2,}\.[\d]{4})\s*\|?\s*M', line)
+            if m_viscan_facture:
+                product_code = m_viscan_facture.group(1).strip()
+                unit_price = float(m_viscan_facture.group(2))
+                specs = self.extract_viscan_specs(line)
+                print(f" Found [VISCAN-FACTURE]: {product_code} | unit: {unit_price}")
+                items.append(LineItem(
+                    product_code=product_code,
+                    quantity=1.0,
+                    unit_price=unit_price,
+                    total=0.0
+                ))
+                continue
+
+            m_viscan_po = re.match(r'^(\d+)\s+BOITE\s+DE\s+(\d+)\s+.+?\s+([A-Z]{2}\d{2}\.\d+)', line, re.IGNORECASE)
+            if m_viscan_po:
+                boxes = float(m_viscan_po.group(1))
+                screws_per_box = float(m_viscan_po.group(2))
+                product_code = m_viscan_po.group(3).strip()
+                specs = self.extract_viscan_specs(line)
+                print(f"  Found [VISCAN-PO]: {product_code} | boxes: {boxes} | per box: {screws_per_box}")
+                items.append(LineItem(
+                    product_code=product_code,
+                    quantity=boxes,
+                    unit_price=screws_per_box,
+                    total=0.0
+                ))
+                continue
+
             # PATTERN 1: FIT format 
             m1 = re.match(r'^(\d+\s+)?\[([A-Z0-9\-\s\(\)]+)\]', line)
             if m1:
@@ -460,8 +421,6 @@ class DocumentMatcherGUI:
                     ))
                     continue
             
-            # PATTERN 2: Dalmen format - everything on one line
-            # Pattern: starts with LETTERS-NUMBERS and has two $ signs
             if re.search(r'\d+\.\d+\s*\$\s+[\d\s,\.]+\s*\$', line):
                 # Line has the price pattern, try to extract code
                 code_match = re.match(r'^([A-Z0-9\-]+)', line)
@@ -498,16 +457,20 @@ class DocumentMatcherGUI:
                 product_code = m2b.group(1).strip()
                 total_str = m2b.group(2).strip()
 
+                specs = self.extract_viscan_specs(line)
+
                 try:
                     total = float(total_str.replace(',', ''))
                     if total > 1:
-                        print(f" Found [VISCAN]: {product_code} = ${total}")
-                        items.append(LineItem(
+                        print(f" Found [VISCAN]: {product_code} = ${total}, specs={specs}")
+                        item = LineItem(
                             product_code=product_code,
                             quantity=1.0,
                             unit_price=total,
                             total=total
-                        ))
+                        )
+                        item.specs = specs
+                        items.append(item)
                         continue
                 except:
                     pass
@@ -536,17 +499,46 @@ class DocumentMatcherGUI:
                 product_code = m4.group(1).strip()
                 # Check if we already have this code
                 if not any(item.product_code == product_code for item in items):
-                    print(f"  Found [VISCAN-PO]: {product_code} (no total)")
-                    items.append(LineItem(
+                    specs = self.extract_viscan_specs(line)
+                    print(f"  Found [VISCAN-PO]: {product_code} (no total), specs={specs}")
+
+                    item = LineItem(
                         product_code=product_code,
                         quantity=1.0,
                         unit_price=0.0,
                         total=0.0
-                    ))
+                    )
+                    item.specs = specs
+                    items.append(item)
                     continue
         
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
+
+    
+    def load_viscan_price_list(self):
+        import pandas as pd
+        self.viscan_prices = {}
+        try:
+            df = pd.read_excel(
+                r"G:\2026 PRICE LIST\VISCAN - Accumulated LIST.xlsx",
+                sheet_name="Sheet1",
+                usecols="E,I",
+                header=0
+            )
+            df.columns = ["code", "price_per_1000"]
+            df = df.dropna(subset=["code", "price_per_1000"])
+            for _, row in df.iterrows():
+                code = str(row["code"]).strip()
+                self.viscan_prices[code] = float(row["price_per_1000"])
+            print(f"Loaded {len(self.viscan_prices)} Viscan prices")
+            print(f"DEBUG: Looking for VA07.1019 in price list: {'VA07.1019' in self.viscan_prices}")
+            for k in self.viscan_prices:
+                if '07' in k:
+                    print(f"  Found similar: {k}")
+        except Exception as e:
+            print(f"Failed to load Viscan price list: {e}" )
+            self.viscan_prices = {}
     
     def needs_ocr(self, lines):
         has_code = any(re.search(r'[A-Z]{2}\d{2}\.\d+', l) for l in lines)
@@ -635,6 +627,10 @@ class DocumentMatcherGUI:
         if self.needs_ocr(lines) or not self.contains_prices(lines):
             print("OCR required: missing prices or product codes...")
             lines = self.ocr_pdf(pdf_path)
+            print(f"DEBUG OCR lines:")
+            for i, l in enumerate(lines):
+                print(f"  [{i}]: {l}")
+            lines = self.ocr_pdf(pdf_path)
             lines = [self.normalize_ocr_line(l) for l in lines]
  
         text = "\n".join(lines)
@@ -655,10 +651,8 @@ class DocumentMatcherGUI:
         code = code.upper()
         code = re.sub(r'\(.*?\)', '', code)  # Remove parentheses
         code = re.sub(r'\s+', '', code)  # Remove spaces
-        code = re.sub(r'^CL-', '', code)  # Remove CL- prefix
-        
-        # Remove VISCAN suffixes like CA, TF, CATW at the end
-        # Keep the base code: VA26.0615CA -> VA26.0615
+        code = re.sub(r'^CL-', '', code)  # Remove CL- at the start
+
         code = re.sub(r'([A-Z]{2}\d{2}\.\d{4,})([A-Z]+)$', r'\1', code)
         
         return code.strip()
@@ -672,19 +666,19 @@ class DocumentMatcherGUI:
         return code.split()[0] if code else code
     
     def aggregate(self, items):
-        """Aggregate items by base code"""
-        agg = defaultdict(lambda: {"total": 0.0, "label": ""})
+        agg = defaultdict(lambda: {"total": 0.0, "unit_price": 0.0, "label": "", "specs": None})
         for i in items:
             key = self.base_code(i.product_code)
             if i.total > 0:
                 agg[key]["total"] += i.total
-
+            if i.unit_price > 0 and agg[key]["unit_price"] == 0.0:
+                agg[key]["unit_price"] = i.unit_price
             if not agg[key]["label"]:  # Keep first label seen
                 agg[key]["label"] = i.product_code
+                agg[key]["specs"] = getattr(i, 'specs', None)  # Store specs from first item
         return agg
 
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
-        """Match two documents"""
         log = []
         log.append("="*60)
         log.append("MATCHING ANALYSIS")
@@ -702,6 +696,7 @@ class DocumentMatcherGUI:
             log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
 
         matched = 0
+        price_check_result = {}
 
         log.append("\n" + "-"*60)
         log.append("MATCHING PROCESS:")
@@ -711,6 +706,7 @@ class DocumentMatcherGUI:
             total1 = data1["total"]
             label1 = data1["label"]
             best_match = None
+            best_match_data = {}
             best_diff = float("inf")
             best_sim = 0
 
@@ -718,57 +714,98 @@ class DocumentMatcherGUI:
                 total2 = data2["total"]
                 label2 = data2["label"]
 
-                sim = self.calculate_similarity(
-                    self.normalize_code(label1),
-                    self.normalize_code(label2)
-                )
+                if key1 == key2:
+                    sim = 1.0
+                else:
+                    sim = self.calculate_similarity(
+                        self.normalize_code(label1),
+                        self.normalize_code(label2)
+                    )
+
+                specs1 = data1.get("specs")
+                specs2 = data2.get("specs")
+
+                if specs1 and specs2:
+                    if specs1.get('size') == specs2.get('size'):
+                        sim += 0.1
+                    if specs1.get('head') == specs2.get('head'):
+                        sim += 0.1
+
                 diff = abs(total1 - total2)
 
-                # If either document has no prices ($0), match ONLY by code similarity
                 if total1 == 0 or total2 == 0:
-                    if sim > 0.80 and sim > best_sim:  # Higher threshold for code-only matching
+                    if sim > best_sim:
                         best_match = label2
+                        best_match_data = data2
                         best_diff = 0
                         best_sim = sim
                 else:
-                    # Both have prices, match by similarity AND price
                     if sim > 0.60 and diff < best_diff:
                         best_match = label2
+                        best_match_data = data2
                         best_diff = diff
                         best_sim = sim
-            
-            # When matching by code only, accept any good similarity
-            if total1 == 0 or (best_match and data2.get("total", 0) == 0):
-                threshold = 0  # No price check needed
+
+            if total1 == 0 or (best_match and best_match_data.get("total", 0) == 0):
+                threshold = 0
             else:
                 threshold = max(5.0, total1 * 0.10)
-            
+
             matched_this = best_match and (best_diff <= threshold or threshold == 0)
-            
+
             log.append(f"\n{label1} (${total1:.2f})")
-            if best_match:            
+            if best_match:
                 log.append(f"  Best match: {best_match} (${total1-best_diff:.2f})")
                 log.append(f"  Similarity: {best_sim:.1%}, Diff: ${best_diff:.2f}, Threshold: ${threshold:.2f}")
+
+                if data1.get("specs") and best_match_data.get("specs"):
+                    s1 = data1["specs"]
+                    s2 = best_match_data["specs"]
+                    if s1.get('size') == s2.get('size'):
+                        log.append(f"  ✅ Size match: {s1.get('size')}")
+                    if s1.get('head') == s2.get('head'):
+                        log.append(f"  ✅ Head match: {s1.get('head')}")
+
+                # Price list check
+                facture_unit_price = best_match_data.get("unit_price", 0)
+                if key1 in self.viscan_prices:
+                    expected_price = self.viscan_prices[key1]
+                    price_match = abs(expected_price - facture_unit_price) < 0.01
+                    log.append(f"  💲 Price check: list ${expected_price:.4f} | facture ${facture_unit_price:.4f} → {'✅ MATCH' if price_match else '❌ MISMATCH'}")
+                    if not price_match:
+                        matched_this = False
+                    price_check_result = {
+                        "code": key1,
+                        "list_price": expected_price,
+                        "facture_price": facture_unit_price,
+                        "match": price_match
+                    }
+                elif facture_unit_price > 0:
+                    log.append(f"  💲 Facture price: ${facture_unit_price:.4f} (not in price list)")
+                    price_check_result = {
+                        "code": key1,
+                        "list_price": 0.0,
+                        "facture_price": facture_unit_price,
+                        "match": False
+                    }
+
                 log.append(f"  Result: {'✓ MATCH' if matched_this else '✗ NO MATCH'}")
             else:
                 log.append(f"  No match found")
-            
+
             if matched_this:
                 matched += 1
-        
-        total_items = max(len(agg1), len(agg2))
+
+        total_items = len(agg2)
         match_percentage = (matched / total_items * 100) if total_items > 0 else 0
         documents_match = match_percentage >= 70
-        
+
         log.append("\n" + "="*60)
         log.append(f"FINAL RESULT: {matched}/{total_items} items matched ({match_percentage:.1f}%)")
         log.append(f"Documents match: {documents_match}")
         log.append("="*60)
-        
-        # Store log
+
         self.match_log = "\n".join(log)
-        
-        # Also print to console
         print("\n" + self.match_log)
 
         return {
@@ -777,115 +814,73 @@ class DocumentMatcherGUI:
             "matched_items": matched,
             "total_items": total_items,
             "order1": doc1.order_number,
-            "order2": doc2.order_number,
+            "order2": doc1.order_number,  # use doc1 PO# for both since facture OCR misses it
             "total1": doc1.total,
             "total2": doc2.total,
-            "total_diff": abs(doc1.total - doc2.total)
+            "total_diff": abs(doc1.total - doc2.total),
+            "price_check": price_check_result
         }
     
     def display_result(self, result):
-        """Display comparison result"""
         self.progress.stop()
         self.progress.pack_forget()
         self.compare_btn.config(state=tk.NORMAL)
-        self.log_btn.config(state=tk.NORMAL, bg=self.primary_color)
-        self.print_btn.config(state=tk.NORMAL, bg=self.primary_color)
-        
-        # Clear result frame
+        self.log_btn.config(state=tk.NORMAL)
+
         for widget in self.result_frame.winfo_children():
             widget.destroy()
-        
-        # Result color
-        if result['match']:
-            bg_color = self.success_color
-            icon = "✅"
-            title = "DOCUMENTS MATCH"
-            message = "The documents are consistent!"
-        else:
-            bg_color = self.error_color
-            icon = "❌"
-            title = "DOCUMENTS DO NOT MATCH"
-            message = "Discrepancies found."
-        
-        # Result card
-        result_card = tk.Frame(self.result_frame, bg=bg_color, padx=20, pady=20)
-        result_card.pack(fill=tk.BOTH, expand=True)
-        
-        # Icon and title
-        icon_label = tk.Label(
-            result_card,
-            text=icon,
-            font=("Arial", 48),
-            bg=bg_color,
-            fg="white"
-        )
-        icon_label.pack()
-        
-        title_label = tk.Label(
-            result_card,
-            text=title,
-            font=("Arial", 18, "bold"),
-            bg=bg_color,
-            fg="white"
-        )
-        title_label.pack(pady=(10, 5))
-        
-        message_label = tk.Label(
-            result_card,
-            text=message,
-            font=("Arial", 11),
-            bg=bg_color,
-            fg="white"
-        )
-        message_label.pack(pady=(0, 20))
-        
-        # Details frame
-        details_frame = tk.Frame(result_card, bg="white", padx=15, pady=15)
-        details_frame.pack(fill=tk.BOTH, expand=True)
-        
-        details = [
-            ("Order Numbers:", f"{result['order1']} ↔ {result['order2']}"),
-            ("Confidence:", f"{result['confidence']:.1f}%"),
-            ("Matched Items:", f"{result['matched_items']} / {result['total_items']}"),
-            ("Document Totals:", f"${result['total1']:.2f} ↔ ${result['total2']:.2f}"),
-            ("Difference:", f"${result['total_diff']:.2f}")
-        ]
-        
-        for i, (label, value) in enumerate(details):
-            row_frame = tk.Frame(details_frame, bg="white")
-            row_frame.pack(fill=tk.X, pady=5)
-            
-            tk.Label(
-                row_frame,
-                text=label,
-                font=("Arial", 10, "bold"),
-                bg="white",
-                anchor="w"
-            ).pack(side=tk.LEFT)
-            
-            tk.Label(
-                row_frame,
-                text=value,
-                font=("Arial", 10),
-                bg="white",
-                anchor="e"
-            ).pack(side=tk.RIGHT)
-            
-            # View Details button
-        tk.Button(
-            details_frame,
-            text="📋 View Detailed Log",
-            font=("Arial", 10, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            cursor="hand2",
-            command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=15,
-            pady=8
-        ).pack(pady=(15, 0))
-        
 
+        is_match = result['match']
+        accent = self.success_color if is_match else self.error_color
+
+        card = tk.Frame(self.result_frame, bg="white", bd=1, relief=tk.SOLID)
+        card.pack(fill=tk.BOTH, expand=True)
+        tk.Frame(card, bg=accent, height=5).pack(fill=tk.X)
+
+        inner = tk.Frame(card, bg="white", padx=24, pady=18)
+        inner.pack(fill=tk.BOTH, expand=True)
+
+        top_row = tk.Frame(inner, bg="white")
+        top_row.pack(fill=tk.X)
+
+        icon = "✅" if is_match else "❌"
+        verdict = "DOCUMENTS MATCH" if is_match else "DOCUMENTS DO NOT MATCH"
+
+        tk.Label(top_row, text=icon, font=("Arial", 28), bg="white").pack(side=tk.LEFT)
+        tk.Label(top_row, text=verdict, font=("Arial", 16, "bold"),
+                bg="white", fg=accent).pack(side=tk.LEFT, padx=12)
+        tk.Label(top_row, text=f"{result['confidence']:.0f}% confidence",
+                font=("Arial", 11), bg="white", fg="#666").pack(side=tk.RIGHT)
+
+        tk.Frame(inner, bg="#e0e0e0", height=1).pack(fill=tk.X, pady=(14, 14))
+
+        stats = tk.Frame(inner, bg="white")
+        stats.pack(fill=tk.X, pady=(0, 14))
+
+        def stat_box(parent, label, value, col, font_size=14):
+            box = tk.Frame(parent, bg="#f8f8f8", padx=14, pady=10, bd=1, relief=tk.SOLID)
+            box.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=(0 if col == 0 else 4, 0))
+            tk.Label(box, text=value, font=("Arial", font_size, "bold"),
+                    bg="#f8f8f8", fg="#222").pack()
+            tk.Label(box, text=label, font=("Arial", 8),
+                    bg="#f8f8f8", fg="#888").pack()
+
+        pc = result.get('price_check', {})
+        list_p = pc.get('list_price', 0)
+        fact_p = pc.get('facture_price', 0)
+        price_icon = "✅" if pc.get('match') else "❌"
+        order_icon = "✅" if result['order1'] == result['order2'] else "❌"
+        price_val = f"{price_icon} ${list_p: .2f} / ${fact_p:.2f}"
+
+        stat_box(stats, "Order Numbers", f"{order_icon}  {result['order1']} / {result['order2']}", 0)
+        stat_box(stats, "Items Matched", f"{result['matched_items']} / {result['total_items']}", 1)
+        stat_box(stats, "Confidence", f"{result['confidence']:.1f}%", 2)
+        stat_box(stats, "List → Facture", price_val, 3, font_size=9)
+
+        tk.Button(inner, text="📋  View Detailed Log", font=("Arial", 10, "bold"),
+                bg=self.primary_color, fg="white", cursor="hand2",
+                command=self.show_log_window, relief=tk.FLAT,
+                padx=18, pady=9).pack(fill=tk.X)
     
     
     def display_error(self, error_msg):

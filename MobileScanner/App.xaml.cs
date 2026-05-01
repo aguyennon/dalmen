@@ -1,4 +1,7 @@
-﻿namespace MobileScanner
+﻿using Microsoft.Maui.Controls;
+using Microsoft.Maui;
+
+namespace MobileScanner
 {
     public partial class App : Application
     {

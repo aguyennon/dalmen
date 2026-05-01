@@ -56,259 +56,160 @@ class ProductFingerprint:
 class DocumentMatcherGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("AI Document Matcher")
-        self.root.geometry("700x600")
+        self.root.title("DECKO Document Matcher")
+        self.root.geometry("820x680")
         self.root.resizable(False, False)
-        
-        # Configure colors
+
         self.bg_color = "#f0f0f0"
         self.primary_color = "#667eea"
         self.success_color = "#4caf50"
         self.error_color = "#f44336"
-        
+
         self.root.configure(bg=self.bg_color)
-        
-        # File paths
+
         self.file1_path = None
         self.file2_path = None
         self.match_log = ""
-        
-        # Create UI
+        self.decko_prices = {}
+        self.decko_options = {}
+        self.load_decko_price_list()
+
         self.create_widgets()
 
-    def show_log_window(self):
-        log_window = tk.Toplevel(self.root)
-        log_window.title("Detailed Log")
-        log_window.geometry("800x600")
-
-        header = tk.Frame(log_window, bg=self.primary_color, padx=10, pady=10)
+    def create_widgets(self):
+        # Header
+        header = tk.Frame(self.root, bg=self.primary_color)
         header.pack(fill=tk.X)
 
         tk.Label(
             header,
-            text="Detailed Log",
-            font=("Arial", 16, "bold"),
-            bg=self.primary_color,
-            fg="white"
-        ).pack()
+            text="DECKO Document Matcher",
+            font=("Arial", 22, "bold"),
+            bg=self.primary_color, fg="white"
+        ).pack(side=tk.LEFT, padx=24, pady=16)
 
-        from tkinter import scrolledtext
-        text_area = scrolledtext.ScrolledText(
-            log_window,
-            font=("courier", 9),
-            wrap=tk.WORD,
-            padx=10,
-            pady=10
-        )
-        text_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        text_area.insert(1.0, self.match_log)
-        text_area.config(state=tk.DISABLED)
-
-        tk.Button(
-            log_window,
-            text="Close",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            cursor="hand2",
-            command=log_window.destroy,
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        ).pack(pady=10)
-
-
-    def print_log(self):
-        import tempfile
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-            f.write("DOCUMENT MATCHER - DETAILED LOG\n")
-            f.write("="*60 + "\n\n")
-            f.write(self.match_log)
-            temp_path = f.name
-        
-        try:
-            if os.name == 'nt':
-                os.startfile(temp_path, "print")
-            else:
-                os.system(f"lpr {temp_path}")
-
-            messagebox.showinfo("Print", "Document sent to printer!")
-        except Exception as e:
-            messagebox.showerror("Print Error", f"Failed to print: {str(e)}")
-            
-
-
-    def create_widgets(self):
-        # Title
-        title_frame = tk.Frame(self.root, bg=self.primary_color, height=80)
-        title_frame.pack(fill=tk.X)
-        title_frame.pack_propagate(False)
-        
-        title_label = tk.Label(
-            title_frame,
-            text="🤖 AI Document Matcher",
-            font=("Arial", 24, "bold"),
-            bg=self.primary_color,
-            fg="white"
-        )
-        
-        title_label.pack(expand=True)
-        
-        # Container for subtitle and log button
-        bottom_header = tk.Frame(title_frame, bg=self.primary_color)
-        bottom_header.pack(fill=tk.X, padx=20)
-        
-        subtitle_label = tk.Label(
-            bottom_header,
-            text="Upload two PDF documents to compare",
-            font=("Arial", 10),
-            bg=self.primary_color,
-            fg="white"
-        )
-        subtitle_label.pack(side=tk.LEFT)
-
-        self.print_btn = tk.Button(
-            bottom_header,
-            text="Print Log",
-            font=("Arial", 9, "bold"),
-            bg="#5568d3",
-            fg="#FFFFFF",
-            cursor="hand2",
-            command=self.print_log,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
-            state=tk.DISABLED
-        )
-        self.print_btn.pack(side=tk.RIGHT)
-        
-        # Small log button in header
         self.log_btn = tk.Button(
-            bottom_header,
-            text="Log",
-            font=("Arial", 9, "bold"),
-            bg="#5568d3",
-            fg="#FFFFFF",
+            header,
+            text="📋  View Log",
+            font=("Arial", 10, "bold"),
+            bg="#5568d3", fg="white",
             cursor="hand2",
             command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
+            relief=tk.FLAT, padx=14, pady=8,
             state=tk.DISABLED
         )
-        self.log_btn.pack(side=tk.RIGHT)
-        
-        # Main content
-        content_frame = tk.Frame(self.root, bg=self.bg_color, padx=30, pady=30)
-        content_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Document 1
-        doc1_frame = tk.LabelFrame(
-            content_frame,
-            text="Document 1",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc1_frame.pack(fill=tk.X, pady=(0, 15))
-        
+        self.log_btn.pack(side=tk.RIGHT, padx=20, pady=14)
+
+        tk.Label(
+            header,
+            text="Upload two PDF documents to compare",
+            font=("Arial", 10),
+            bg=self.primary_color, fg="#ccd4ff"
+        ).pack(side=tk.RIGHT, padx=4, pady=14)
+
+        # Body
+        body = tk.Frame(self.root, bg=self.bg_color, padx=24, pady=20)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        # Side-by-side doc panels
+        docs_row = tk.Frame(body, bg=self.bg_color)
+        docs_row.pack(fill=tk.X)
+        docs_row.columnconfigure(0, weight=1)
+        docs_row.columnconfigure(1, weight=1)
+
+        # Doc 1 card
+        card1 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card1.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
+
+        tk.Frame(card1, bg=self.primary_color, height=4).pack(fill=tk.X)
+
+        inner1 = tk.Frame(card1, bg="white", padx=18, pady=16)
+        inner1.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(inner1, text="DOC 1", font=("Arial", 9, "bold"),
+                 bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner1, text="Dalmen Order or DECKO Confirmation",
+                 font=("Arial", 8), bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+
         self.file1_label = tk.Label(
-            doc1_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
+            inner1, text="No file selected",
+            font=("Arial", 9), bg="white", fg="#aaa", anchor="w",
+            wraplength=260, justify="left"
         )
-        self.file1_label.pack(fill=tk.X, pady=(0, 10))
-        
-        btn1 = tk.Button(
-            doc1_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(1),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn1.pack()
- 
-        # Document 2
-        doc2_frame = tk.LabelFrame(
-            content_frame,
-            text="Document 2",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc2_frame.pack(fill=tk.X, pady=(0, 20))
-        
+        self.file1_label.pack(fill=tk.X, pady=(0, 12))
+
+        tk.Button(
+            inner1, text="📁  Browse PDF",
+            font=("Arial", 10, "bold"),
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=lambda: self.browse_file(1),
+            relief=tk.FLAT, padx=16, pady=9
+        ).pack(fill=tk.X)
+
+        # Doc 2 card
+        card2 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card2.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
+
+        tk.Frame(card2, bg=self.primary_color, height=4).pack(fill=tk.X)
+
+        inner2 = tk.Frame(card2, bg="white", padx=18, pady=16)
+        inner2.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(inner2, text="DOC 2", font=("Arial", 9, "bold"),
+                 bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner2, text="Dalmen Order or DECKO Confirmation",
+                 font=("Arial", 8), bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+
         self.file2_label = tk.Label(
-            doc2_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
+            inner2, text="No file selected",
+            font=("Arial", 9), bg="white", fg="#aaa", anchor="w",
+            wraplength=260, justify="left"
         )
-        self.file2_label.pack(fill=tk.X, pady=(0, 10))
-        
-        btn2 = tk.Button(
-            doc2_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(2),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn2.pack()
-        
+        self.file2_label.pack(fill=tk.X, pady=(0, 12))
+
+        tk.Button(
+            inner2, text="📁  Browse PDF",
+            font=("Arial", 10, "bold"),
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=lambda: self.browse_file(2),
+            relief=tk.FLAT, padx=16, pady=9
+        ).pack(fill=tk.X)
+
         # Compare button
         self.compare_btn = tk.Button(
-            content_frame,
-            text="⚡ Compare Documents",
-            font=("Arial", 14, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5568d3",
-            activeforeground="white",
-            cursor="hand2",
-            command=self.compare_documents,
-            relief=tk.FLAT,
-            padx=30,
-            pady=15,
+            body,
+            text="⚡  Compare Documents",
+            font=("Arial", 13, "bold"),
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=self.compare_documents,
+            relief=tk.FLAT, padx=30, pady=14,
             state=tk.DISABLED
         )
-        self.compare_btn.pack(fill=tk.X, pady=(0, 20))
-        
-        
+        self.compare_btn.pack(fill=tk.X, pady=(18, 0))
+
         # Progress bar
-        self.progress = ttk.Progressbar(
-            content_frame,
-            mode='indeterminate',
-            length=300
+        self.progress = ttk.Progressbar(body, mode='indeterminate')
+
+        # Result area
+        self.result_frame = tk.Frame(body, bg=self.bg_color)
+        self.result_frame.pack(fill=tk.BOTH, expand=True, pady=(16, 0))
+
+    def browse_file(self, file_num):
+        filename = filedialog.askopenfilename(
+            title=f"Select Document {file_num}",
+            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
-        
-        # Result frame
-        self.result_frame = tk.Frame(content_frame, bg=self.bg_color)
-        self.result_frame.pack(fill=tk.BOTH, expand=True)
+        if filename:
+            display_name = filename.replace('\\', '/').split('/')[-1]
+            if file_num == 1:
+                self.file1_path = filename
+                self.file1_label.config(text=f"✓ {display_name}", fg=self.success_color)
+            else:
+                self.file2_path = filename
+                self.file2_label.config(text=f"✓ {display_name}", fg=self.success_color)
+
+            if self.file1_path and self.file2_path:
+                self.compare_btn.config(state=tk.NORMAL)
 
     def compare_documents(self):
         for widget in self.result_frame.winfo_children():
@@ -321,33 +222,6 @@ class DocumentMatcherGUI:
         thread = threading.Thread(target=self.run_comparison)
         thread.daemon = True
         thread.start()
-    
-    def browse_file(self, file_num):
-        filename = filedialog.askopenfilename(
-            title=f"Select Document {file_num}",
-            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
-        )
-        
-        if filename:
-            if file_num == 1:
-                self.file1_path = filename
-                # Handle both forward and backslash
-                display_name = filename.replace('\\', '/').split('/')[-1]
-                self.file1_label.config(
-                    text=f"✓ {display_name}",
-                    fg=self.success_color
-                )
-            else:
-                self.file2_path = filename
-                display_name = filename.replace('\\', '/').split('/')[-1]
-                self.file2_label.config(
-                    text=f"✓ {display_name}",
-                    fg=self.success_color
-                )
-            
-            # Enable compare button if both files selected
-            if self.file1_path and self.file2_path:
-                self.compare_btn.config(state=tk.NORMAL)
 
     def run_comparison(self):
         try:
@@ -359,10 +233,10 @@ class DocumentMatcherGUI:
             doc1 = self.parse_document(self.file1_path)
             print(f"Doc1 parsed: {len(doc1.line_items)} items found")
             print(f"Doc1 provider: {doc1.provider}")
-            print(f"Doc1 has fingerprint: {hasattr(doc1, 'fingerprint') and doc1.fingerprint is not None}")
+            print(f"Doc1 order: {doc1.order_number}")
             
             print("Parsing second doc...")
-            doc2 = self.parse_document(self.file2_path)
+            doc2 = self.parse_document(self.file2_path, dalmen_po=doc1.order_number)
             print(f"Doc2 parsed: {len(doc2.line_items)} items found")
             print(f"Doc2 provider: {doc2.provider}")
             print(f"Doc2 has fingerprint: {hasattr(doc2, 'fingerprint') and doc2.fingerprint is not None}")
@@ -391,19 +265,559 @@ class DocumentMatcherGUI:
                 if page_text:
                     text += page_text + "\n"
         return text
+
+    
+    def load_decko_price_list(self):
+        import pandas as pd
+        try:
+            df = pd.read_excel(
+                r"G:\2026 PRICE LIST\DECKO - PRODUITS DALMEN LTÉE.xlsx",
+                sheet_name="Liste de prix",
+                header=None
+            )
+
+            size_cols = {}
+            for col_idx in range(7, 17):
+                val = str(df.iloc[5, col_idx]).strip()
+                if val and val != 'nan':
+                    size_cols[col_idx] = val
+
+            print(f" DEBUG DECKO price list: size columns = {size_cols}")
+
+            model_rows = {
+                "LÉGENDE 'S'": 6,
+                "CLASSIQUE 'S'": 7,
+                "CLASSIQUE 'C'": 8,
+                "JARDIN-PVC": 9,
+                "COMBO-PVC": 10,
+                "COMBO-PVC-PEINTURE": 12,
+                "COMBO-ALU": 14,
+                "HYBRIDE": 16,
+                "JARDIN-HYBRIDE": 18,
+            }
+
+            for model, row_idx in model_rows.items():
+                self.decko_prices[model] = {}
+                for col_idx, size_label in size_cols.items():
+                    val = df.iloc[row_idx, col_idx]
+                    try:
+                        self.decko_prices[model][size_label] = float(val)
+                    except:
+                        self.decko_prices[model][size_label] = 0.0
+
+            option_rows = range(21, 52)
+            for row_idx in option_rows:
+                option_name = str(df.iloc[row_idx, 1]).strip()
+                if option_name and option_name != 'nan':
+                    self.decko_options[option_name] = {}
+                    for col_idx, size_label in size_cols.items():
+                        val = df.iloc[row_idx, col_idx]
+                        try:
+                            self.decko_options[option_name][size_label] = float(val)
+                        except:
+                            self.decko_options[option_name][size_label] = 0.0
+
+            print(f"Loaded {len(self.decko_prices)} DECKO models")
+            print(f"Loaded {len(self.decko_options)} DECKO options")
+            print(f"DEBUG all energetique keys: {[k for k in self.decko_options if 'NERG' in k.upper()]}")
+
+        except Exception as e:
+            print(f"Failed to load DECKO price list: {e}")
+
+    
+    def get_decko_size_col(self, text: str) -> str:
+        t = text.upper()
+
+        sash_match = re.search(r'(\d)\s*SASH|(\d)\s*VOLETS?|MODELE\s*(\d)\s*VOLETS?', t)
+        if sash_match:
+            sash_count = int(next(g for g in sash_match.groups() if g))
+        else:
+            sash_count = 2
+
+        footage_match = re.search(r'(?:SASH\s+MODEL|MODELE\s+\d\s+VOLETS?)[^\']*?(\d+)\'', t)
+        if not footage_match:
+            footage_match = re.search(r'(?:PATIO|PORTE)[^\']{0,60}\)\s*(\d+)\s*(?:\'|$)', t)
+        if not footage_match:
+            footage_match = re.search(r'\b([5-9]|10|12)\'', t)
+        
+        
+        footage = int(footage_match.group(1)) if footage_match else 6
+        size_col = f"{footage}' {sash_count}L"
+
+        print(f"DEBUG DECKO size: footage={footage}', sash={sash_count} -> column='{size_col}'")
+        return size_col
+
+
+    def strip_accents(self, text: str) -> str:
+        import unicodedata
+        return ''.join(
+            c for c in unicodedata.normalize('NFD', text)
+            if unicodedata.category(c) != 'Mn'
+        )
+
+    def calculate_decko_expected_price(self, text: str, include_moustiquaire: bool = False) -> tuple:
+        t = text.upper()
+        breakdown = []
+        if re.search(r'V01R\s*S0UMISS10N|VOIR\s*SOUMISSION', t):
+            breakdown.append("⚠️ Custom package — voir soumission de Decko")
+            breakdown.append("Cannot verifty against standard price list")
+            breakdown.append("Manual review required")
+            return 0.0, breakdown
+
+        total = 0.0
+
+        print(f"DEBUG calc_price: text length={len(text)}")
+        exterior_match = re.search(r'.{0,30}(EXTERIOR|PAINTED|PEINTUR).{0,30}', t)
+        print(f"DEBUG calc_price: exterior area = '{exterior_match.group(0) if exterior_match else 'NOT FOUND'}'")
+        print(f"DEBUG calc_price: first 300 chars of text:\n{t[:300]}")
+
+        model_map = {
+            r"CLASSIQUE\s*['\"]?C['\"]?|CLASSIC\s*['\"]?C['\"]?": "CLASSIQUE 'C'",
+            r"L[EÉ]GENDE\s*['\"]?S['\"]?|LEGENDE\s*['\"]?S['\"]?": "LÉGENDE 'S'",
+            r"CLASSIQUE\s*['\"]?S['\"]?|CLASSIC\s*['\"]?S['\"]?": "CLASSIQUE 'S'",
+            r"JARDIN-HYBRIDE": "JARDIN-HYBRIDE",
+            r"JARDIN-PVC": "JARDIN-PVC",
+            r"COMBO-PVC-PEINTURE|COMBO\s*PVC\s*PEINTURE": "COMBO-PVC-PEINTURE",
+            r"COMBO-ALU|COMBO\s*ALU": "COMBO-ALU",
+            r"COMBO-PVC|COMBO\s*PVC": "COMBO-PVC",
+            r"HYBRIDE": "HYBRIDE",
+        }
+
+        model = None
+        for pattern, model_name in model_map.items():
+            if re.search(pattern, t):
+                model = model_name
+                break
+
+        if not model:
+            breakdown.append("⚠️ Could not detect model from PO")
+            return 0.0, breakdown
+
+        breakdown.append(f"Model: {model}")
+
+        size_col = self.get_decko_size_col(text)
+        breakdown.append(f"Size: {size_col}")
+
+        # Base price lookup
+        if model in self.decko_prices and size_col in self.decko_prices[model]:
+            base = self.decko_prices[model][size_col]
+            total += base
+            breakdown.append(f"Base price ({model} × {size_col}): ${base:.2f}")
+        else:
+            breakdown.append(f"⚠️ Base price not found for {model} × {size_col}")
+            return 0.0, breakdown
+
+        # Triple glass — each size is independent of the others
+        # so this block is at top level, not nested inside anything
+        if re.search(r'TRIPLE\s*GLASS|TRIPLE\s*VERRE|VERRE\s*TRIPLE', t):
+            if size_col == "6' 2L":
+                option_price = 223.0
+            else:
+                option_key = next(
+                    (k for k in self.decko_options if 'TRIPLE' in k.upper()),
+                    None
+                )
+                option_price = (
+                    self.decko_options[option_key][size_col]
+                    if option_key and size_col in self.decko_options[option_key]
+                    else 0.0
+                )
+            total += option_price
+            breakdown.append(f"Triple verre: +${option_price:.2f}")
+        elif re.search(r'LOW[\s\-]*E\s*\+?\s*ARGON|VERRE\s*[EÉ]NERG|ENERGETIQUE', t):
+            option_key = next(
+                (k for k in self.decko_options
+                if self.strip_accents(k).upper().startswith('VERRE')
+                and 'NERG' in self.strip_accents(k).upper()),
+                None
+            )
+            if option_key and size_col in self.decko_options[option_key]:
+                option_price = self.decko_options[option_key][size_col]
+                total += option_price
+                breakdown.append(f"Verre énergétique: +${option_price:.2f}")
+                print(f"DEBUG verre energetique: option_key='{option_key}, price={self.decko_options.get(option_key, {}).get(size_col, 'NOT FOUND')}")
+
+        if re.search(r'9\s*1/4|9\.25', t) and re.search(r'FRAME|CADRE', t):
+            option_key = next(
+                (k for k in self.decko_options
+                if 'EXTENSION DE CADRE' in k.upper() and 'REV' in k.upper()),
+                None
+            )
+            if option_key and size_col in self.decko_options[option_key]:
+                option_price = self.decko_options[option_key][size_col]
+                total += option_price
+                breakdown.append(f"Extension cadre 9¼\" + revêtement: +${option_price:.2f}")
+
+        # 7 1/4" frame — check if soufflage/extension present
+        elif re.search(r'7\s*1/4|7\.25', t) and re.search(r'FRAME|CADRE', t):
+            # Soufflage/Extension present → use the extension cadre option ($83)
+            # No soufflage → use plain revêtement intérieur ($46)
+            has_soufflage = bool(re.search(
+                r'SOUFFLAGE|EXTENSION\s*DE\s*CADRE|EXTENS10N\s*DE\s*CADRE', t
+            ))
+            if has_soufflage:
+                option_key = next(
+                    (k for k in self.decko_options
+                    if 'EXTENSION DE CADRE' in k.upper() and 'REV' in k.upper()),
+                    None
+                )
+            else:
+                option_key = next(
+                    (k for k in self.decko_options
+                    if self.strip_accents(k).upper().startswith('REV')
+                    and '7' in k),
+                    None
+                )
+            if option_key and size_col in self.decko_options[option_key]:
+                option_price = self.decko_options[option_key][size_col]
+                total += option_price
+                breakdown.append(f"{'Extension cadre' if has_soufflage else 'Revêtement intérieur'} 7¼\": +${option_price:.2f}")
+
+        # Exterior paint — also at top level, independent of frame size
+        if re.search(r'EXTER1?0?R\s*PA1?NTED|EXTERIOR\s*PAINTED|PEINTUR[EÉ].*NOIR|EXT.*PEINTUR', t):
+            print(f"DEBUG: paint check: searching in text snippet:")
+            paint_area = re.search(r'.{0,50}(PAINT|PEINTUR|EXT).{0,50}', t)
+            if paint_area:
+                print(f" FOund: '{paint_area.group(0)}'")
+            print(f"DEBUG: paint regex match: {bool(re.search(r'EXTERIOR PAINTED|PEINTURE.*EXT|EXT.*PEINTUR', t))}")
+            option_key = next(
+                (k for k in self.decko_options
+                if 'PEINTURE' in k.upper()
+                and '1' in k
+                and 'EXT' in k.upper()
+                and 'HYBRIDE' not in k.upper()
+                and 'CARRELAGE' not in k.upper()
+                and 'POIGN' not in k.upper()),
+                None
+            )
+            print(f"DEBUG paint option key found: {option_key}")
+
+            if option_key and size_col in self.decko_options[option_key]:
+                option_price = self.decko_options[option_key][size_col]
+                total += option_price
+                breakdown.append(f"Peinture 1 côté ext: +${option_price:.2f}")
+        
+        if re.search(r'BARRE\s*DE\s*SECUR|BARRE\s*DE\s*S[EÉ]CUR1T[EÉ]|SECURITY\s*BAR', t):
+            option_key = next(
+                (k for k in self.decko_options
+                if self.strip_accents(k).upper().startswith('BARRE')),
+                None
+            )
+            if option_key:
+                option_price = 23.0
+                total += option_price
+                breakdown.append(f"Barre de sécurité: +${option_price:.2f}")
+
+            print(f"DEBUG barre: option_key='{option_key}', all_barre_keys={[k for k in self.decko_options if 'BARRE' 
+                in k.upper()]}, price={self.decko_options.get(option_key, {}).get(size_col, 'NOT FOUND')}")
+
+        if include_moustiquaire:
+            total += 9.0
+            breakdown.append(f"Moustiquaire (screen in bag): +$9.00")
+
+        # Explicitly $0 items — documented so the log is transparent
+        breakdown.append(f"Aluminum screen: $0.00 (standard)")
+        breakdown.append(f"Contemporary handle: $0.00")
+        breakdown.append(f"COMM:ADJUSTMENT: ignored")
+        breakdown.append(f"─────────────────────")
+        breakdown.append(f"Expected Total: ${total:.2f}")
+
+        return total, breakdown
+
+
+    def extract_facture_sous_total(self, text: str) -> float:
+        match = re.search(r'Sous-total\s*:\s*([\d\s,\.]+)', text, re.IGNORECASE)
+        if match:
+            raw = match.group(1).strip()
+            raw = raw.replace(' ', '').replace(',', '.')
+            try:
+                val = float(raw)
+                print(f"DEBUG: Facture Sous-total extracted: ${val:.2f}")
+                return val
+            except:
+                pass
+        print("DEBUG: Could not extract Sous-total from facture")
+        return 0.0
+
+    
+    def match_decko_documents(self, doc1, doc2):
+        log = []
+        log.append("="*60)
+        log.append("DECKO MATCHING")
+        log.append("="*60)
+
+        score = 0
+
+        # --- Order number matching ---
+        log.append(f"\nOrder Numbers:")
+        log.append(f"  Doc1: {doc1.order_number}")
+        log.append(f"  Doc2: {doc2.order_number}")
+
+        order_match = (doc1.order_number == doc2.order_number and
+                    doc1.order_number != "Unknown")
+        if order_match:
+            score += 50
+            log.append("  ✓ EXACT MATCH (+50 points)")
+        elif doc1.order_number != "Unknown" and doc2.order_number != "Unknown":
+            if doc1.order_number in doc2.order_number or doc2.order_number in doc1.order_number:
+                score += 45
+                log.append(" ~ PARTIAL MATCH (+45 points)")
+            else:
+                log.append("  ✗ Different order numbers (0 points)")
+        else:
+            log.append("  ✗ Order number missing in one or both documents.")
+
+        doc2_is_facture = (
+            "FACTURE" in doc2.raw_text.upper() and
+            "SOUS-TOTAL" in doc2.raw_text.upper()
+        )
+        print(f"DEBUG is_facture check: 'FACTURE' in text = {'FACTURE' in doc2.raw_text.upper()}")
+        print(f"DEBUG is_facture check: 'SOUS-TOTAL' in text = {'SOUS-TOTAL' in doc2.raw_text.upper()}")
+        print(f"DEBUG doc2 raw text preview: {doc2.raw_text[:300]}")
+
+        if doc2_is_facture:
+        # ── PRICE CHECK PATH (PO vs Facture) ─────────────────────────
+            log.append(f"\n{'='*60}")
+            log.append("PRICE VERIFICATION (PO vs Facture)")
+            log.append(f"{'='*60}")
+
+            facture_has_moustiquaire = bool(re.search(
+                r'MOUSTIQUAIRE|DIVERS-50892', doc2.raw_text.upper()
+            ))
+            expected_price, breakdown = self.calculate_decko_expected_price(
+                doc1.raw_text, include_moustiquaire=facture_has_moustiquaire
+            )
+            facture_total = self.extract_facture_sous_total(doc2.raw_text)
+
+            # Write the price breakdown into the log so the user can see each component
+            for line in breakdown:
+                log.append(f"  {line}")
+
+            log.append(f"\n  Facture Sous-total: ${facture_total:.2f}")
+
+            price_ok = False
+            if expected_price > 0 and facture_total > 0:
+                diff = abs(expected_price - facture_total)
+                price_ok = diff <= 5.0
+                log.append(f"  Difference: ${diff:.2f} (threshold: $5.00)")
+                log.append(f"  Price Check: {'✅ PASS' if price_ok else '❌ FAIL'}")
+                if price_ok:
+                    score += 50  # Price check passes = full second half of score
+            elif expected_price == 0.0:
+                log.append("  ⚠️ Price verification skipped — manual review required")
+                price_ok = True
+                score += 25
+            else:
+                log.append("  ⚠️ Could not complete price check — missing data")
+
+            documents_match = order_match and price_ok
+
+            log.append(f"\n{'='*60}")
+            log.append(f"ORDER MATCH: {'✅ YES' if order_match else '❌ NO'}")
+            log.append(f"PRICE CHECK: {'✅ PASS' if price_ok else '❌ FAIL'}")
+            log.append(f"RESULT: {'✅ DOCUMENTS MATCH' if documents_match else '❌ DO NOT MATCH'}")
+            log.append("="*60)
+
+            self.match_log = "\n".join(log)
+            print("\n" + self.match_log)
+
+            return {
+                "match": documents_match,
+                "confidence": score,
+                "matched_items": 1,
+                "total_items": 1,
+                "order1": doc1.order_number,
+                "order2": doc2.order_number,
+                "total1": expected_price,   # What we calculated from the PO + price list
+                "total2": facture_total,    # What the facture says
+                "total_diff": abs(expected_price - facture_total),
+                "configuration": doc1.fingerprint.configuration if doc1.fingerprint else "N/A",
+                "config_match": order_match,
+                "frame": doc1.fingerprint.frame if doc1.fingerprint else "N/A",
+                "frame_match": price_ok,
+                "is_facture": True,   # Tells display_result which set of stat boxes to show
+                "price_ok": price_ok,
+            }
+
+        else:
+            # ── FINGERPRINT PATH (PO vs Confirmation) ────────────────────
+            # This is the original logic — unchanged so existing PO→confirmation
+            # matching continues to work exactly as before
+            log.append(f"\n{'='*60}")
+            log.append("PRODUCT FINGERPRINT COMPARISON (PO vs Confirmation):")
+            log.append(f"{'='*60}")
+
+            fp1 = doc1.fingerprint
+            fp2 = doc2.fingerprint
+
+            fingerprint_score = 0
+            fingerprint_max = 0
+
+            # Category (5 points)
+            log.append(f"\n[CATEGORY]")
+            log.append(f"  Doc1: {fp1.category or 'Not specified'}")
+            log.append(f"  Doc2: {fp2.category or 'Not specified'}")
+            if fp1.category and fp2.category:
+                fingerprint_max += 5
+                if fp1.category == fp2.category:
+                    fingerprint_score += 5
+                    log.append("  ✓ Match (+5)")
+                elif 'DOOR' in fp1.category and 'DOOR' in fp2.category:
+                    fingerprint_score += 2.5
+                    log.append(" - Partial match (+2.5)")
+                else:
+                    log.append("  ✗ Different")
+
+            # Configuration (10 points)
+            log.append(f"\n[CONFIGURATION]")
+            log.append(f"  Doc1: {fp1.configuration or 'Not specified'}")
+            log.append(f"  Doc2: {fp2.configuration or 'Not specified'}")
+            if fp1.configuration and fp2.configuration:
+                fingerprint_max += 10
+                if fp1.configuration == fp2.configuration:
+                    fingerprint_score += 10
+                    log.append("  ✓ Match (+10)")
+                else:
+                    log.append("  ✗ Different")
+
+            # Dimensions (15 points)
+            log.append(f"\n[DIMENSIONS]")
+            log.append(f"  Doc1: {fp1.width}\" x {fp1.height}\"")
+            log.append(f"  Doc2: {fp2.width}\" x {fp2.height}\"")
+            if fp1.width and fp2.width and fp1.height and fp2.height:
+                fingerprint_max += 15
+                if abs(fp1.width - fp2.width) < 0.25 and abs(fp1.height - fp2.height) < 0.25:
+                    fingerprint_score += 15
+                    log.append("  ✓ Match (+15)")
+                elif abs(fp1.width - fp2.width) < 1.0 and abs(fp1.height - fp2.height) < 1.0:
+                    fingerprint_score += 10
+                    log.append("  ~ Close match (+10)")
+                else:
+                    log.append(f"  ✗ Different")
+
+            # Frame (5 points)
+            log.append(f"\n[FRAME MATERIAL]")
+            log.append(f"  Doc1: {fp1.frame or 'Not specified'}")
+            log.append(f"  Doc2: {fp2.frame or 'Not specified'}")
+            if fp1.frame and fp2.frame:
+                fingerprint_max += 5
+                if fp1.frame == fp2.frame:
+                    fingerprint_score += 5
+                    log.append("  ✓ Match (+5)")
+                else:
+                    log.append("  ✗ Different")
+
+            # Glass (10 points)
+            log.append(f"\n[GLASS CONFIGURATION]")
+            log.append(f"  Doc1: {fp1.glass_layers} layers, Low-E: {fp1.low_e}, Argon: {fp1.argon}")
+            log.append(f"  Doc2: {fp2.glass_layers} layers, Low-E: {fp2.low_e}, Argon: {fp2.argon}")
+            if fp1.glass_layers and fp2.glass_layers:
+                fingerprint_max += 10
+                if (fp1.glass_layers == fp2.glass_layers and 
+                    fp1.low_e == fp2.low_e and 
+                    fp1.argon == fp2.argon):
+                    fingerprint_score += 10
+                    log.append("  ✓ Full match (+10)")
+                elif fp1.glass_layers == fp2.glass_layers:
+                    fingerprint_score += 5
+                    log.append("  ~ Partial match (+5)")
+                else:
+                    log.append("  ✗ Different")
+
+            # Colors (5 points)
+            log.append(f"\n[COLORS]")
+            log.append(f"  Doc1: Interior={fp1.interior_color or 'N/A'}, Exterior={fp1.exterior_color or 'N/A'}")
+            log.append(f"  Doc2: Interior={fp2.interior_color or 'N/A'}, Exterior={fp2.exterior_color or 'N/A'}")
+            color_match = True
+            if fp1.interior_color and fp2.interior_color and fp1.interior_color != fp2.interior_color:
+                color_match = False
+            if fp1.exterior_color and fp2.exterior_color and fp1.exterior_color != fp2.exterior_color:
+                color_match = False
+            if (fp1.interior_color or fp1.exterior_color) and (fp2.interior_color or fp2.exterior_color):
+                fingerprint_max += 5
+                if color_match:
+                    fingerprint_score += 5
+                    log.append("  ✓ Colors match (+5)")
+                else:
+                    log.append("  ✗ Different colors")
+
+            # Extras (5 points)
+            log.append(f"\n[EXTRAS/OPTIONS]")
+            log.append(f"  Doc1: {fp1.extras if fp1.extras else 'None'}")
+            log.append(f"  Doc2: {fp2.extras if fp2.extras else 'None'}")
+            if fp1.extras or fp2.extras:
+                fingerprint_max += 5
+                if fp1.extras and fp2.extras:
+                    extras_union = len(fp1.extras | fp2.extras)
+                    extras_intersect = len(fp1.extras & fp2.extras)
+                    if extras_union > 0:
+                        extras_score = 5 * (extras_intersect / extras_union)
+                        fingerprint_score += extras_score
+                        log.append(f"  ~ Similarity: {extras_intersect}/{extras_union} ({extras_score:.1f} points)")
+
+            if fingerprint_max > 0:
+                fp_pct = (fingerprint_score / fingerprint_max) * 100
+                score += (fp_pct / 100) * 50
+                log.append(f"\nFingerprint Score: {fingerprint_score:.1f}/{fingerprint_max} = {fp_pct:.1f}%")
+                log.append(f"Contributes: {(fp_pct / 100) * 50:.1f}/50 points to total")
+
+            documents_match = score >= 70
+
+            log.append(f"\n{'='*60}")
+            log.append(f"FINAL SCORE: {score:.1f}/100")
+            log.append(f"Threshold: 70 points")
+            log.append(f"Result: {'✅ DOCUMENTS MATCH' if documents_match else '❌ DO NOT MATCH'}")
+            log.append("="*60)
+
+            self.match_log = "\n".join(log)
+            print("\n" + self.match_log)
+
+            return {
+                "match": documents_match,
+                "confidence": score,
+                "matched_items": 1,
+                "total_items": 1,
+                "order1": doc1.order_number,
+                "order2": doc2.order_number,
+                "total1": doc1.total,
+                "total2": doc2.total,
+                "total_diff": abs(doc1.total - doc2.total),
+                "configuration": fp1.configuration or fp2.configuration or "N/A",
+                "config_match": bool(fp1.configuration and fp2.configuration 
+                                    and fp1.configuration == fp2.configuration),
+                "frame": fp1.frame or fp2.frame or "N/A",
+                "frame_match": bool(fp1.frame and fp2.frame 
+                                    and fp1.frame == fp2.frame),
+                "is_facture": False,  # Tells display_result to show fingerprint stat boxes
+                "price_ok": None,
+            }
     
     def extract_order_number(self, text: str) -> str:
         """Extract order number"""
+        text = re.sub(r'(\d{3}-\d{5}-\d)\s+(\d-\d-\d)', r'\1\2', text)
         patterns = [
-        r'Votre\s+N[°o]\s+commande\s*[:\s]*([\d\-]+[A-Z0-9]*)',  # DECKO confirmation: "Votre N° commande 310-03328-23-1-1"
-        r'Num[ée]ro?\s+de\s+bon\s*[:\s]*\n\s*([\d\-]+)',  # Dalmen order: "Numéro de bon\n310-03328-23-1"
-        r'commande\s+([\d\-]{10,})',  # "commande" followed by long number (10+ chars)
-    ]
+            r'Votre\s+n[°o]\.?\s*commande\s*[:\s]*\n?\s*Remarque\s*\n\s*([\d\-]+)',
+            r'Votre\s+n[°o]\.?\s*commande\s*[:\s]*([\d\-]+)',
+            r'Num[ée]ro?\s+de\s+bon\s*[:\s]*\n?\s*(\d{3}-\d{5}-\d{2}-\d-\d)',  
+            r'Votre\s+N[°o]\.?\s+commande\s*[:\s]*([\d\-]+)',
+            r'(\d{3}-\d{5}-\d{2}-\d-\d)', 
+            ]
 
-        for pattern in patterns:
+        print(f"DEBUG: Searching for order number in text...")
+
+        for i, pattern in enumerate(patterns):
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                return match.group(1).strip()
+                order_num = match.group(1).strip()
+                print(f" Pattern {i+1} matched: '{order_num}'")
+                return order_num
+
+        print(f" No pattern matched. Text preview around 'commande':")
+        commande_idx = text.lower().find('commande')
+        if commande_idx != -1:
+            snippet = text[max(0, commande_idx-20):commande_idx+100]
+            print(f" '{snippet}'")
+
         return "Unknown"
     
     def extract_total(self, text: str) -> float:
@@ -667,6 +1081,11 @@ class DocumentMatcherGUI:
         fp = ProductFingerprint(extras=set())
 
         print("\nDEBUG: Extracting fingerprint from text...")
+
+        is_facture = "FACTURE" in t or "N° CLIENT" in t or "DATE FACTURÉE" in t
+
+        if is_facture:
+            print(" DEBUG: FACTURE detected - will skip dimension extraction")
         
         # Category detection
         if "PATIO" in t or "PORTE-PATIO" in t:
@@ -717,11 +1136,13 @@ class DocumentMatcherGUI:
                 fp.configuration = "OX"
                 print(f"  - Configuration: OX (detected by standalone 'OX')")
 
-        print(f"\nDEBUG: Searching for dimensions...")
-        # Look for any X pattern
-        x_matches = re.findall(r'\d+[^\n]{0,20}[Xx×][^\n]{0,20}\d+', t)
-        if x_matches:
-            print(f"  Found potential dimension patterns: {x_matches[:3]}")
+        if not is_facture:
+            print(f"\nDEBUG: Searching for dimensions...")
+            x_matches = re.findall(r'\d+[^\n]{0,20}[Xx×][^\n]{0,20}\d+', t)
+            if x_matches:
+                print(f"  Found potential dimension patterns: {x_matches[:3]}")
+        else:
+            print(f" Skipping dimension extraction (facture document)")
             
         desc_patterns = [
             r'CLASS[^\n]{0,100}',  # CLASS... line
@@ -733,7 +1154,8 @@ class DocumentMatcherGUI:
             if desc_match:
                 print(f"  Found description pattern match: '{desc_match.group(0)}'")
         
-        # Special case: Look for "BL-141 70 5/8"" pattern (width on separate line from height)
+        hybrid_match = re.search(r'HYBRIDE\s*[-:]\s*(\d+)\s+(\d+)/(\d+)\s*[\"″]?\s*-\s*[A-Z]+', t)
+
         bl_width_match = re.search(r'BL-\d+\s+(\d+)\s+(\d+)/(\d+)\s*[\"″]', t)
         if bl_width_match:
             fp.width = float(bl_width_match.group(1)) + float(bl_width_match.group(2)) / float(bl_width_match.group(3))
@@ -921,189 +1343,6 @@ class DocumentMatcherGUI:
         
         return (score / max_score) * 100 if max_score else 0
 
-    def match_decko_documents(self, doc1, doc2):
-        """Match two DECKO documents using fingerprint comparison"""
-        log = []
-        log.append("="*60)
-        log.append("DECKO FINGERPRINT MATCHING")
-        log.append("="*60)
-        
-        score = 0
-        max_score = 100
-        
-        # Order number matching (50 points)
-        log.append(f"\nOrder Numbers:")
-        log.append(f"  Doc1: {doc1.order_number}")
-        log.append(f"  Doc2: {doc2.order_number}")
-        
-        if doc1.order_number == doc2.order_number and doc1.order_number != "Unknown":
-            score += 50
-            log.append("  ✓ EXACT MATCH (+50 points)")
-        elif doc1.order_number != "Unknown" and doc2.order_number != "Unknown":
-            if doc1.order_number in doc2.order_number or doc2.order_number in doc1.order_number:
-                score += 45
-                log.append(" ~ PARTIAL MATCH (+45 points)")
-            else:
-                similarity = self.calculate_similarity(doc1.order_number, doc2.order_number)
-                if similarity > 0.7:
-                    score += 40
-                    log.append(f" ~ SIMILAR ({similarity:.0%} similarity) (+40 points)")
-                else:
-                    log.append("  ✗ Different order numbers (0 points)")
-        else:
-            log.append("  ✗ Order number missing in one or both documents.")
-    
-
-        # Fingerprint comparison (50 points)
-        log.append(f"\n{'='*60}")
-        log.append("PRODUCT FINGERPRINT COMPARISON:")
-        log.append(f"{'='*60}")
-        
-        fp1 = doc1.fingerprint
-        fp2 = doc2.fingerprint
-        
-        fingerprint_score = 0
-        fingerprint_max = 0
-        
-        # Category (5 points)
-        log.append(f"\n[CATEGORY]")
-        log.append(f"  Doc1: {fp1.category or 'Not specified'}")
-        log.append(f"  Doc2: {fp2.category or 'Not specified'}")
-        if fp1.category and fp2.category:
-            fingerprint_max += 5
-            if fp1.category == fp2.category:
-                fingerprint_score += 5
-                log.append(f"  ✓ Match (+5)")
-            else:
-                log.append(f"  ✗ Different")
-        
-        # Configuration (10 points)
-        log.append(f"\n[CONFIGURATION]")
-        log.append(f"  Doc1: {fp1.configuration or 'Not specified'}")
-        log.append(f"  Doc2: {fp2.configuration or 'Not specified'}")
-        if fp1.configuration and fp2.configuration:
-            fingerprint_max += 10
-            if fp1.configuration == fp2.configuration:
-                fingerprint_score += 10
-                log.append(f"  ✓ Match (+10)")
-            else:
-                log.append(f"  ✗ Different")
-        
-        # Dimensions (15 points - very important)
-        log.append(f"\n[DIMENSIONS]")
-        log.append(f"  Doc1: {fp1.width}\" x {fp1.height}\"")
-        log.append(f"  Doc2: {fp2.width}\" x {fp2.height}\"")
-        if fp1.width and fp2.width and fp1.height and fp2.height:
-            fingerprint_max += 15
-            width_diff = abs(fp1.width - fp2.width)
-            height_diff = abs(fp1.height - fp2.height)
-            
-            if width_diff < 0.25 and height_diff < 0.25:
-                fingerprint_score += 15
-                log.append(f"  ✓ Match within tolerance (+15)")
-            elif width_diff < 1.0 and height_diff < 1.0:
-                fingerprint_score += 10
-                log.append(f"  ~ Close match (+10)")
-            else:
-                log.append(f"  ✗ Different (diff: {width_diff}\" x {height_diff}\")")
-        
-        # Frame material (5 points)
-        log.append(f"\n[FRAME MATERIAL]")
-        log.append(f"  Doc1: {fp1.frame or 'Not specified'}")
-        log.append(f"  Doc2: {fp2.frame or 'Not specified'}")
-        if fp1.frame and fp2.frame:
-            fingerprint_max += 5
-            if fp1.frame == fp2.frame:
-                fingerprint_score += 5
-                log.append(f"  ✓ Match (+5)")
-            else:
-                log.append(f"  ✗ Different")
-        
-        # Glass layers (10 points)
-        log.append(f"\n[GLASS CONFIGURATION]")
-        log.append(f"  Doc1: {fp1.glass_layers} layers, Low-E: {fp1.low_e}, Argon: {fp1.argon}")
-        log.append(f"  Doc2: {fp2.glass_layers} layers, Low-E: {fp2.low_e}, Argon: {fp2.argon}")
-        if fp1.glass_layers and fp2.glass_layers:
-            fingerprint_max += 10
-            if (fp1.glass_layers == fp2.glass_layers and 
-                fp1.low_e == fp2.low_e and 
-                fp1.argon == fp2.argon):
-                fingerprint_score += 10
-                log.append(f"  ✓ Full match (+10)")
-            elif fp1.glass_layers == fp2.glass_layers:
-                fingerprint_score += 5
-                log.append(f"  ~ Partial match (+5)")
-            else:
-                log.append(f"  ✗ Different")
-        
-        # Colors (5 points)
-        log.append(f"\n[COLORS]")
-        log.append(f"  Doc1: Interior={fp1.interior_color or 'N/A'}, Exterior={fp1.exterior_color or 'N/A'}")
-        log.append(f"  Doc2: Interior={fp2.interior_color or 'N/A'}, Exterior={fp2.exterior_color or 'N/A'}")
-        color_match = True
-        if fp1.interior_color and fp2.interior_color and fp1.interior_color != fp2.interior_color:
-            color_match = False
-        if fp1.exterior_color and fp2.exterior_color and fp1.exterior_color != fp2.exterior_color:
-            color_match = False
-        
-        if (fp1.interior_color or fp1.exterior_color) and (fp2.interior_color or fp2.exterior_color):
-            fingerprint_max += 5
-            if color_match:
-                fingerprint_score += 5
-                log.append(f"  ✓ Colors match (+5)")
-            else:
-                log.append(f"  ✗ Different colors")
-        
-        # Extras (5 points)
-        log.append(f"\n[EXTRAS/OPTIONS]")
-        log.append(f"  Doc1: {fp1.extras if fp1.extras else 'None'}")
-        log.append(f"  Doc2: {fp2.extras if fp2.extras else 'None'}")
-        
-        if fp1.extras or fp2.extras:
-            fingerprint_max += 5
-            if fp1.extras and fp2.extras:
-                extras_union = len(fp1.extras | fp2.extras)
-                extras_intersect = len(fp1.extras & fp2.extras)
-                if extras_union > 0:
-                    extras_score = 5 * (extras_intersect / extras_union)
-                    fingerprint_score += extras_score
-                    log.append(f"  ~ Similarity: {extras_intersect}/{extras_union} ({extras_score:.1f} points)")
-            else:
-                log.append(f"  - Only one document has extras specified")
-        
-        # Calculate final fingerprint score as percentage of max possible
-        if fingerprint_max > 0:
-            fp_percentage = (fingerprint_score / fingerprint_max) * 100
-            # Add to total score (out of 50 points for fingerprint)
-            score += (fp_percentage / 100) * 50
-            log.append(f"\nFingerprint Score: {fingerprint_score:.1f}/{fingerprint_max} = {fp_percentage:.1f}%")
-            log.append(f"Contributes: {(fp_percentage / 100) * 50:.1f}/50 points to total")
-        else:
-            log.append(f"\n⚠ Warning: No comparable fingerprint data found")
-            log.append(f"Matching based on order number only")
-        
-        documents_match = score >= 70
-        
-        log.append("\n" + "="*60)
-        log.append(f"FINAL SCORE: {score:.1f}/100")
-        log.append(f"Threshold: 70 points")
-        log.append(f"Result: {'✓ DOCUMENTS MATCH' if documents_match else '✗ DOCUMENTS DO NOT MATCH'}")
-        log.append("="*60)
-        
-        self.match_log = "\n".join(log)
-        print("\n" + self.match_log)
-
-        return {
-            "match": documents_match,
-            "confidence": score,
-            "matched_items": 1,
-            "total_items": 1,
-            "order1": doc1.order_number,
-            "order2": doc2.order_number,
-            "total1": doc1.total,
-            "total2": doc2.total,
-            "total_diff": abs(doc1.total - doc2.total)
-        }
 
     def needs_ocr(self, text):
         """Check if OCR is needed - look in full text instead of lines"""
@@ -1160,6 +1399,40 @@ class DocumentMatcherGUI:
         
         return all_text
 
+    def extract_pdf_text_by_page(self, pdf_path: str) -> List[str]:
+        pages = []
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    pages.append(page_text)
+                else:
+                    pages.append("")
+        return pages
+
+    def filter_pages_by_po(self, pages: List[str], target_po: str) -> str:
+        matching_text = []
+
+        print(f"\nDEBUG: Filtering {len(pages)} pages for PO: {target_po}")
+
+        for i, page_text in enumerate(pages, 1):
+            if target_po in page_text:
+                print(f" Page {i} DOES contain PO {target_po}")
+                matching_text.append(page_text)
+            else:
+                po_base = '-'.join(target_po.split('-')[:3])
+                if po_base in page_text and len(po_base) >= 10:
+                    print(f" Page {i} DOES contain PO base {po_base}")
+                    matching_text.append(page_text)
+        
+        if not matching_text:
+            print(f"   WARNING: No pages found with PO {target_po}")
+            print(f"  Will process all pages (fallback mode)")
+            return '\n'.join(pages)
+
+        print(f"  Found {len(matching_text)} matching page(s)\n")
+        return '\n'.join(matching_text)
+
 
     def contains_prices(self, text):
         """Check if text contains prices - works on full text string"""
@@ -1183,17 +1456,33 @@ class DocumentMatcherGUI:
         return t
 
 
-    def parse_document(self, pdf_path: str) -> OrderDocument:
-        """Parse a PDF document"""
-        # Extract raw text
-        text = self.extract_pdf_text(pdf_path)
+    def parse_document(self, pdf_path: str, dalmen_po: str = None) -> OrderDocument:
+        quick_scan_text = self.extract_pdf_text(pdf_path)
+        provider = self.detect_provider(quick_scan_text)
+        quick_scan_text = re.sub(r'(\d{3}-\d{5}-\d)\s+(\d-\d-\d)', r'\1\2', quick_scan_text)
+        temp_order_number = self.extract_order_number(quick_scan_text)
+
+        if dalmen_po and provider == "DECKO_DALMEN" and "FACTURE" in quick_scan_text.upper():
+            print(f"DEBUG: Using Dalmen PO {dalmen_po} to filter facture pages")
+            temp_order_number = dalmen_po
+
+        print(f"DEBUG: Quick scan - Provider: {provider}, PO: {temp_order_number}")
+
+        if provider == "DECKO_DALMEN" and temp_order_number != "Unknown" and dalmen_po:
+            print(f"DEBUG: DECKO document detected - filtering pages by PO")
+            pages = self.extract_pdf_text_by_page(pdf_path)
+            text = self.filter_pages_by_po(pages, temp_order_number)
+            print(f"DEBUG: Diltered text length: {len(text)} chars")
+        else:
+            text = quick_scan_text
 
         if not text or len(text.strip()) < 50:
             print("DEBUG: pdfplumber returned empty - forcing OCR")
             ocr_lines = self.ocr_pdf(pdf_path)
             text = "\n".join([self.normalize_ocr_line(l) for l in ocr_lines])
-        
-        # DEBUG: Print first 500 chars to see what we're working with
+            full_text = text
+            print(f"DEBUG FULL PO TEXT:\n{full_text}")
+
         print(f"DEBUG: Text preview (first 500 chars):")
         print(text[:500])
         print(f"DEBUG: Contains 'DALMEN': {'DALMEN' in text.upper()}")
@@ -1204,29 +1493,30 @@ class DocumentMatcherGUI:
         provider = self.detect_provider(text)
         print(f"DEBUG: Detected provider: {provider}")
 
-        # Normalize text for price extraction
         normalized_text = self.normalize_price_text(text)
 
-        # Only use OCR if absolutely necessary - check if we can extract meaningful content
         use_ocr = False
         if provider == "DECKO_DALMEN":
-            # For DECKO docs, we don't need prices - just check if we have product codes or specs
             has_content = bool(re.search(r'[A-Z]{2,}\s*-?\s*\d+|XO|OX|\d+\s*["\']?\s*[Xx]\s*\d+', text))
             print(f"DEBUG: DECKO doc has content: {has_content}")
             if not has_content:
                 use_ocr = True
                 print("DEBUG: OCR required for DECKO doc - missing product specs")
         else:
-            # For other docs, check for codes and prices
             if self.needs_ocr(normalized_text) or not self.contains_prices(normalized_text):
                 use_ocr = True
                 print("DEBUG: OCR required: missing prices or product codes...")
-        
+
         if use_ocr:
             ocr_lines = self.ocr_pdf(pdf_path)
             text = "\n".join([self.normalize_ocr_line(l) for l in ocr_lines])
             normalized_text = self.normalize_price_text(text)
- 
+
+        # Store full text now before anything else touches it
+        # This is used by calculate_decko_expected_price to read all PO option lines
+        full_text = text
+        print(f"DEBUG: full_text length = {len(full_text)}")
+
         header = {}
         fingerprint = None
         if provider == "DECKO_DALMEN":
@@ -1237,7 +1527,7 @@ class DocumentMatcherGUI:
         order_number = self.extract_order_number(text)
         line_items = self.extract_line_items(normalized_text)
         total = self.extract_total(normalized_text)
-    
+
         doc = OrderDocument(
             order_number=order_number,
             line_items=line_items,
@@ -1245,9 +1535,11 @@ class DocumentMatcherGUI:
             provider=provider
         )
         doc.fingerprint = fingerprint
-        doc.raw_text = text  # Store raw text for debugging
-        return doc
+        # Facture uses filtered page text (right page only for Sous-total extraction)
+        # PO uses full_text so all option lines like EXTERIOR PAINTED are available
+        doc.raw_text = full_text
 
+        return doc  
     
     def normalize_code(self, code: str) -> str:
         """Normalize product code"""
@@ -1277,13 +1569,11 @@ class DocumentMatcherGUI:
             if i.total > 0:
                 agg[key]["total"] += i.total
 
-            if not agg[key]["label"]:  # Keep first label seen
+            if not agg[key]["label"]:
                 agg[key]["label"] = i.product_code
         return agg
 
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
-        """Match two documents"""
-        
         # If both documents are DECKO_DALMEN format, use fingerprint matching
         if (doc1.provider == "DECKO_DALMEN" and doc2.provider == "DECKO_DALMEN" and
             hasattr(doc1, 'fingerprint') and hasattr(doc2, 'fingerprint') and
@@ -1332,22 +1622,19 @@ class DocumentMatcherGUI:
                 )
                 diff = abs(total1 - total2)
 
-                # If either document has no prices ($0), match ONLY by code similarity
                 if total1 == 0 or total2 == 0:
-                    if sim > 0.80 and sim > best_sim:  # Higher threshold for code-only matching
+                    if sim > 0.80 and sim > best_sim:
                         best_match = label2
                         best_diff = 0
                         best_sim = sim
                 else:
-                    # Both have prices, match by similarity AND price
                     if sim > 0.60 and diff < best_diff:
                         best_match = label2
                         best_diff = diff
                         best_sim = sim
             
-            # When matching by code only, accept any good similarity
             if total1 == 0 or (best_match and data2.get("total", 0) == 0):
-                threshold = 0  # No price check needed
+                threshold = 0
             else:
                 threshold = max(5.0, total1 * 0.10)
             
@@ -1373,10 +1660,7 @@ class DocumentMatcherGUI:
         log.append(f"Documents match: {documents_match}")
         log.append("="*60)
         
-        # Store log
         self.match_log = "\n".join(log)
-        
-        # Also print to console
         print("\n" + self.match_log)
 
         return {
@@ -1390,127 +1674,121 @@ class DocumentMatcherGUI:
             "total2": doc2.total,
             "total_diff": abs(doc1.total - doc2.total)
         }
-    
+
+    # ── UI DISPLAY ────────────────────────────────────────────────────────────
+
     def display_result(self, result):
-        """Display comparison result"""
         self.progress.stop()
         self.progress.pack_forget()
         self.compare_btn.config(state=tk.NORMAL)
-        self.log_btn.config(state=tk.NORMAL, bg=self.primary_color)
-        self.print_btn.config(state=tk.NORMAL, bg=self.primary_color)
-        
-        # Clear result frame
+        self.log_btn.config(state=tk.NORMAL)
+
         for widget in self.result_frame.winfo_children():
             widget.destroy()
-        
-        # Result color
-        if result['match']:
-            bg_color = self.success_color
-            icon = "✅"
-            title = "DOCUMENTS MATCH"
-            message = "The documents are consistent!"
-        else:
-            bg_color = self.error_color
-            icon = "❌"
-            title = "DOCUMENTS DO NOT MATCH"
-            message = "Discrepancies found."
-        
-        # Result card
-        result_card = tk.Frame(self.result_frame, bg=bg_color, padx=20, pady=20)
-        result_card.pack(fill=tk.BOTH, expand=True)
-        
-        # Icon and title
-        icon_label = tk.Label(
-            result_card,
-            text=icon,
-            font=("Arial", 48),
-            bg=bg_color,
-            fg="white"
-        )
-        icon_label.pack()
-        
-        title_label = tk.Label(
-            result_card,
-            text=title,
-            font=("Arial", 18, "bold"),
-            bg=bg_color,
-            fg="white"
-        )
-        title_label.pack(pady=(10, 5))
-        
-        message_label = tk.Label(
-            result_card,
-            text=message,
-            font=("Arial", 11),
-            bg=bg_color,
-            fg="white"
-        )
-        message_label.pack(pady=(0, 20))
-        
-        # Details frame
-        details_frame = tk.Frame(result_card, bg="white", padx=15, pady=15)
-        details_frame.pack(fill=tk.BOTH, expand=True)
-        
-        details = [
-            ("Order Numbers:", f"{result['order1']} ↔ {result['order2']}"),
-            ("Confidence:", f"{result['confidence']:.1f}%"),
-            ("Matched Items:", f"{result['matched_items']} / {result['total_items']}"),
-            ("Document Totals:", f"${result['total1']:.2f} ↔ ${result['total2']:.2f}"),
-            ("Difference:", f"${result['total_diff']:.2f}")
-        ]
-        
-        for i, (label, value) in enumerate(details):
-            row_frame = tk.Frame(details_frame, bg="white")
-            row_frame.pack(fill=tk.X, pady=5)
-            
-            tk.Label(
-                row_frame,
-                text=label,
-                font=("Arial", 10, "bold"),
-                bg="white",
-                anchor="w"
-            ).pack(side=tk.LEFT)
-            
-            tk.Label(
-                row_frame,
-                text=value,
-                font=("Arial", 10),
-                bg="white",
-                anchor="e"
-            ).pack(side=tk.RIGHT)
-            
-            # View Details button
-        tk.Button(
-            details_frame,
-            text="📋 View Detailed Log",
-            font=("Arial", 10, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            cursor="hand2",
-            command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=15,
-            pady=8
-        ).pack(pady=(15, 0))
-        
 
-    
-    
+        is_match = result['match']
+        accent = self.success_color if is_match else self.error_color
+
+        # Result card
+        card = tk.Frame(self.result_frame, bg="white", bd=1, relief=tk.SOLID)
+        card.pack(fill=tk.BOTH, expand=True)
+
+        # Coloured top stripe
+        tk.Frame(card, bg=accent, height=5).pack(fill=tk.X)
+
+        inner = tk.Frame(card, bg="white", padx=24, pady=18)
+        inner.pack(fill=tk.BOTH, expand=True)
+
+        # Icon + verdict + confidence
+        top_row = tk.Frame(inner, bg="white")
+        top_row.pack(fill=tk.X)
+
+        icon = "✅" if is_match else "❌"
+        verdict = "DOCUMENTS MATCH" if is_match else "DOCUMENTS DO NOT MATCH"
+
+        tk.Label(top_row, text=icon, font=("Arial", 28),
+                 bg="white").pack(side=tk.LEFT)
+
+        tk.Label(top_row, text=verdict,
+                 font=("Arial", 16, "bold"), bg="white", fg=accent
+                 ).pack(side=tk.LEFT, padx=12)
+
+        tk.Label(top_row,
+                 text=f"{result['confidence']:.0f}% confidence",
+                 font=("Arial", 11), bg="white", fg="#666"
+                 ).pack(side=tk.RIGHT)
+
+        # Divider
+        tk.Frame(inner, bg="#e0e0e0", height=1).pack(fill=tk.X, pady=(14, 14))
+
+        # Stats row
+        stats = tk.Frame(inner, bg="white")
+        stats.pack(fill=tk.X, pady=(0, 14))
+
+        def stat_box(parent, label, value, col):
+            box = tk.Frame(parent, bg="#f8f8f8", padx=14, pady=10, bd=1, relief=tk.SOLID)
+            box.grid(row=0, column=col, padx=(0 if col == 0 else 8, 0), sticky="ew")
+            parent.columnconfigure(col, weight=1)
+            tk.Label(box, text=value, font=("Arial", 14, "bold"),
+                     bg="#f8f8f8", fg="#222").pack()
+            tk.Label(box, text=label, font=("Arial", 8),
+                     bg="#f8f8f8", fg="#888").pack()
+
+        order_icon = "✅" if result['order1'] == result['order2'] else "❌"
+
+        if result.get('is_facture'):
+            price_icon = "✅" if result.get('price_ok') else "❌"
+            stat_box(stats, "Order Numbers",  f"{order_icon}  {result['order1']} / {result['order2']}", 0)
+            stat_box(stats, "Expected Price", f"${result['total1']:.2f}", 1)
+            stat_box(stats, "Facture Total",  f"${result['total2']:.2f}", 2)
+            stat_box(stats, "Price Check",    f"{price_icon}  {'Pass' if result.get('price_ok') else 'Fail'}", 3)
+        else:
+            config_icon = "✅" if result.get('config_match') else "❌"
+            frame_icon  = "✅" if result.get('frame_match')  else "❌"
+            stat_box(stats, "Order Numbers",   f"{order_icon}  {result['order1']} / {result['order2']}", 0)
+            stat_box(stats, "Items Matched",   f"{result['matched_items']} / {result['total_items']}", 1)
+            stat_box(stats, "Configuration",   f"{config_icon}  {result.get('configuration', 'N/A')}", 2)
+            stat_box(stats, "Frame Material",  f"{frame_icon}  {result.get('frame', 'N/A')}", 3)
+
+        # View Log button
+        tk.Button(
+            inner,
+            text="📋  View Detailed Log",
+            font=("Arial", 10, "bold"),
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=self.show_log_window,
+            relief=tk.FLAT, padx=18, pady=9
+        ).pack(fill=tk.X)
+
     def display_error(self, error_msg):
-        """Display error message"""
         self.progress.stop()
         self.progress.pack_forget()
         self.compare_btn.config(state=tk.NORMAL)
-        
-        messagebox.showerror(
-            "Error",
-            f"Failed to process documents:\n\n{error_msg}"
-        )
+        messagebox.showerror("Error", f"Failed to process documents:\n\n{error_msg}")
+
+    def show_log_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Detailed Matching Log")
+        win.geometry("800x600")
+
+        header = tk.Frame(win, bg=self.primary_color, padx=10, pady=10)
+        header.pack(fill=tk.X)
+        tk.Label(header, text="Detailed Matching Log", font=("Arial", 16, "bold"),
+                 bg=self.primary_color, fg="white").pack()
+
+        ta = scrolledtext.ScrolledText(win, font=("Courier", 9), wrap=tk.WORD, padx=10, pady=10)
+        ta.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        ta.insert(1.0, self.match_log)
+        ta.config(state=tk.DISABLED)
+
+        tk.Button(win, text="Close", font=("Arial", 11, "bold"), bg=self.primary_color,
+                  fg="white", cursor="hand2", command=win.destroy,
+                  relief=tk.FLAT, padx=20, pady=10).pack(pady=10)
 
 
 def main():
     root = tk.Tk()
-    app = DocumentMatcherGUI(root)
+    DocumentMatcherGUI(root)
     root.mainloop()
 
 

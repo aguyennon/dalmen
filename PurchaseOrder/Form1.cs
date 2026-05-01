@@ -169,46 +169,76 @@ namespace PurchaseOrder
                 cb.EndText();
 
                 // BOX TOP RIGHT
-                cb.Rectangle(350f, 670f, 230f, 150f);
+                float boxX = 350f;
+                float boxY = 640f;
+                float boxWidth = 230f;
+                float boxHeight = 180f;
+
+                cb.Rectangle(boxX, boxY, boxWidth, boxHeight);
                 cb.Stroke();
+
+                // Title centered in box
+                float boxCenterX = boxX + (boxWidth / 2);
+                float titleY = boxY + boxHeight - 20f; // 20px from top of box
 
                 ColumnText.ShowTextAligned(cb, Element.ALIGN_CENTER,
-                    new Phrase("Purchase Order", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14)), 440f, 800f, 0);
+                    new Phrase("Purchase Order", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14)),
+                    boxCenterX, titleY, 0);
 
-                float leftX = 360f;
-                float rightX = 480f;
-                float y = 725f;
+                // Field setup
+                float leftX = boxX + 10f;  // 10px padding from left edge of box
+                float fieldWidth = 90f;
+                float fieldHeight = 18f;
+                float labelWidth = 100f;
+                float rowGap = 30f;
+                float startY = boxY + boxHeight - 50f; // Start below title
 
-                cb.Rectangle(rightX, y + 45, 50f, 20f);
+                float y = startY;
+
+                // DATE
+                float fieldX = boxX + boxWidth - fieldWidth - 10f; // Right-aligned with padding
+                cb.Rectangle(fieldX, y, fieldWidth, fieldHeight);
                 cb.Stroke();
-                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Date:"), leftX, y + 50, 0);
-                TextField dateField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 65, rightX + 50, y + 45), "Date");
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Date:"), leftX, y + 3, 0);
+                TextField dateField = new TextField(writer, new iTextSharp.text.Rectangle(fieldX, y, fieldX + fieldWidth, y + fieldHeight), "Date");
                 dateField.Text = DateTime.Now.ToString("dd MMM yyyy");
                 writer.AddAnnotation(dateField.GetTextField());
+                y -= rowGap;
 
-                y -= 20;
-                cb.Rectangle(rightX, y + 35, 50f, 20f);
+                // PO NUMBER
+                cb.Rectangle(fieldX, y, fieldWidth, fieldHeight);
                 cb.Stroke();
-                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("P.O. #:"), leftX, y + 40, 0);
-                TextField poField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 55, rightX + 50, y + 35), "PO");
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("P.O. #:"), leftX, y + 3, 0);
+                TextField poField = new TextField(writer, new iTextSharp.text.Rectangle(fieldX, y, fieldX + fieldWidth, y + fieldHeight), "PO");
                 poField.Text = currentPONumber.ToString();
                 writer.AddAnnotation(poField.GetTextField());
+                y -= rowGap;
 
-                y -= 30;
-                cb.Rectangle(rightX - 40, y + 33, 100f, 20f);
+                // NAME
+                cb.Rectangle(fieldX, y, fieldWidth, fieldHeight);
                 cb.Stroke();
-                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Name:"), leftX, y + 38, 0);
-                TextField nameField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 53, rightX + 60, y + 33), "Name");
-                dateField.Text = tbxName.Text.ToString();
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Name:"), leftX, y + 3, 0);
+                TextField nameField = new TextField(writer, new iTextSharp.text.Rectangle(fieldX, y, fieldX + fieldWidth, y + fieldHeight), "Name");
+                nameField.Text = tbxName.Text;
                 writer.AddAnnotation(nameField.GetTextField());
+                y -= rowGap;
 
-                y -= 20;
-                cb.Rectangle(rightX - 40, y + 23, 100f, 20f);
+                // SUPPLIER
+                cb.Rectangle(fieldX, y, fieldWidth, fieldHeight);
                 cb.Stroke();
-                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Supplier:"), leftX, y + 30, 0);
-                TextField supplierField = new TextField(writer, new iTextSharp.text.Rectangle(rightX, y + 43, rightX + 60, y + 23), "Supplier");
-                supplierField.Text = tbxSupplierName.Text.ToString();
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("Supplier:"), leftX, y + 3, 0);
+                TextField supplierField = new TextField(writer, new iTextSharp.text.Rectangle(fieldX, y, fieldX + fieldWidth, y + fieldHeight), "Supplier");
+                supplierField.Text = tbxSupplierName.Text;
                 writer.AddAnnotation(supplierField.GetTextField());
+                y -= rowGap;
+
+                // COMMANDE
+                cb.Rectangle(fieldX, y, fieldWidth, fieldHeight);
+                cb.Stroke();
+                ColumnText.ShowTextAligned(cb, Element.ALIGN_LEFT, new Phrase("# de Commande:"), leftX, y + 3, 0);
+                TextField commandeField = new TextField(writer, new iTextSharp.text.Rectangle(fieldX, y, fieldX + fieldWidth, y + fieldHeight), "Commande");
+                commandeField.Text = tbxCommande.Text;
+                writer.AddAnnotation(commandeField.GetTextField());
 
                 // For each section in header
                 float tableTopY = 550f;
@@ -332,6 +362,11 @@ namespace PurchaseOrder
         {
 
             cbxExtCol.Items.Add("Dal-04 Blanc");
+
+        }
+
+        private void label12_Click(object sender, EventArgs e)
+        {
 
         }
     }

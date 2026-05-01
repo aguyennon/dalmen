@@ -16,6 +16,7 @@ from collections import defaultdict
 import os
 from pdf2image import convert_from_path
 import pytesseract
+import pandas as pd
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
@@ -25,6 +26,7 @@ class LineItem:
     annexe_pr: str
     description: str
     quantity: int = 1
+    unit_price: float = 0.0
 
 @dataclass
 class OrderDocument:
@@ -32,278 +34,162 @@ class OrderDocument:
     line_items: List[LineItem]
     provider: str = "NOVATECH_WINDOWS"
 
+
 class DocumentMatcherGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Novatech Windows Matcher")
-        self.root.geometry("700x600")
+        self.root.title("Glazing/Slab Matcher")
+        self.root.geometry("820x680")
         self.root.resizable(False, False)
 
-        # Configure colors
         self.bg_color = "#f0f0f0"
-        self.primary_color = "#667eea"  
+        self.primary_color = "#667eea"
         self.success_color = "#4caf50"
         self.error_color = "#f44336"
-        
+
         self.root.configure(bg=self.bg_color)
-        
-        # File paths
+
         self.file1_path = None
         self.file2_path = None
         self.match_log = ""
-        
-        # Create UI
+
         self.create_widgets()
 
-    def show_log_window(self):
-        log_window = tk.Toplevel(self.root)
-        log_window.title("Detailed Log")
-        log_window.geometry("800x600")
-
-        header = tk.Frame(log_window, bg=self.primary_color, padx=10, pady=10)
+    def create_widgets(self):
+        # Header
+        header = tk.Frame(self.root, bg=self.primary_color)
         header.pack(fill=tk.X)
 
         tk.Label(
             header,
-            text="Detailed Log",
-            font=("Arial", 16, "bold"),
-            bg=self.primary_color,
-            fg="white"
-        ).pack()
-
-        text_area = scrolledtext.ScrolledText(
-            log_window,
-            font=("courier", 9),
-            wrap=tk.WORD,
-            padx=10,
-            pady=10
-        )
-        text_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        text_area.insert(1.0, self.match_log)
-        text_area.config(state=tk.DISABLED)
-
-        tk.Button(
-            log_window,
-            text="Close",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            cursor="hand2",
-            command=log_window.destroy,
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        ).pack(pady=10)
-
-    def print_log(self):
-        import tempfile
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-            f.write("NOVATECH WINDOWS MATCHER - DETAILED LOG\n")
-            f.write("="*60 + "\n\n")
-            f.write(self.match_log)
-            temp_path = f.name
-        
-        try:
-            if os.name == 'nt':
-                os.startfile(temp_path, "print")
-            else:
-                os.system(f"lpr {temp_path}")
-
-            messagebox.showinfo("Print", "Document sent to printer!")
-        except Exception as e:
-            messagebox.showerror("Print Error", f"Failed to print: {str(e)}")
-
-    def create_widgets(self):
-        title_frame = tk.Frame(self.root, bg=self.primary_color, height=80)
-        title_frame.pack(fill=tk.X)
-        title_frame.pack_propagate(False)
-
-        title_label = tk.Label(
-            title_frame,
-            text=" Novatech Windows Matcher",
-            font=("Arial", 24, "bold"),
-            bg=self.primary_color,
-            fg="white"
-        )
-        title_label.pack(expand=True)
-
-        bottom_header = tk.Frame(title_frame, bg=self.primary_color)
-        bottom_header.pack(fill=tk.X, padx=20)
-
-        subtitle_label = tk.Label(
-            bottom_header,
-            text="Match Dalmen window orders with Novatech confirmations",
-            font=("Arial", 10),
-            bg=self.primary_color,
-            fg="white"
-        )
-        subtitle_label.pack(side=tk.LEFT)
-
-        self.print_btn = tk.Button(
-            bottom_header,
-            text="Print Log",
-            font=("Arial", 9, "bold"),
-            bg="#667eea",
-            fg="#FFFFFF",
-            cursor="hand2",
-            command=self.print_log,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
-            state=tk.DISABLED
-        )
-        self.print_btn.pack(side=tk.RIGHT)
+            text="Glazing/Slab Matcher",
+            font=("Arial", 22, "bold"),
+            bg=self.primary_color, fg="white"
+        ).pack(side=tk.LEFT, padx=24, pady=16)
 
         self.log_btn = tk.Button(
-            bottom_header,
-            text="Log",
-            font=("Arial", 9, "bold"),
-            bg="#667eea",
-            fg="#FFFFFF",
+            header,
+            text="📋  View Log",
+            font=("Arial", 10, "bold"),
+            bg="#5568d3", fg="white",
             cursor="hand2",
             command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5,
+            relief=tk.FLAT, padx=14, pady=8,
             state=tk.DISABLED
         )
-        self.log_btn.pack(side=tk.RIGHT, padx=(0, 5))
+        self.log_btn.pack(side=tk.RIGHT, padx=20, pady=14)
 
-        content_frame = tk.Frame(self.root, bg=self.bg_color, padx=30, pady=30)
-        content_frame.pack(fill=tk.BOTH, expand=True)
+        tk.Label(
+            header,
+            text="Match Dalmen window orders with Novatech confirmations",
+            font=("Arial", 10),
+            bg=self.primary_color, fg="#ccd4ff"
+        ).pack(side=tk.RIGHT, padx=4, pady=14)
 
-        # Document 1 - Dalmen Order
-        doc1_frame = tk.LabelFrame(
-            content_frame,
-            text="Dalmen Window Order",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc1_frame.pack(fill=tk.X, pady=(0, 15))
-        
+        # Body
+        body = tk.Frame(self.root, bg=self.bg_color, padx=24, pady=20)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        # Side-by-side doc panels
+        docs_row = tk.Frame(body, bg=self.bg_color)
+        docs_row.pack(fill=tk.X)
+        docs_row.columnconfigure(0, weight=1)
+        docs_row.columnconfigure(1, weight=1)
+
+        # Doc 1 card
+        card1 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card1.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
+
+        tk.Frame(card1, bg=self.primary_color, height=4).pack(fill=tk.X)
+
+        inner1 = tk.Frame(card1, bg="white", padx=18, pady=16)
+        inner1.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(inner1, text="DOC 1", font=("Arial", 9, "bold"),
+                 bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner1, text="Dalmen Window Order",
+                 font=("Arial", 8), bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+
         self.file1_label = tk.Label(
-            doc1_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
+            inner1, text="No file selected",
+            font=("Arial", 9), bg="white", fg="#aaa", anchor="w",
+            wraplength=260, justify="left"
         )
-        self.file1_label.pack(fill=tk.X, pady=(0, 10))
+        self.file1_label.pack(fill=tk.X, pady=(0, 12))
 
-        btn1 = tk.Button(
-            doc1_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#69abd6",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(1),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn1.pack()
+        tk.Button(
+            inner1, text="📁  Browse PDF",
+            font=("Arial", 10, "bold"),
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=lambda: self.browse_file(1),
+            relief=tk.FLAT, padx=16, pady=9
+        ).pack(fill=tk.X)
 
-        # Document 2 - Novatech Confirmation
-        doc2_frame = tk.LabelFrame(
-            content_frame,
-            text="Novatech Confirmation",
-            font=("Arial", 12, "bold"),
-            bg=self.bg_color,
-            fg=self.primary_color,
-            padx=20,
-            pady=15
-        )
-        doc2_frame.pack(fill=tk.X, pady=(0, 20))
-        
+        # Doc 2 card
+        card2 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
+        card2.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
+
+        tk.Frame(card2, bg=self.primary_color, height=4).pack(fill=tk.X)
+
+        inner2 = tk.Frame(card2, bg="white", padx=18, pady=16)
+        inner2.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(inner2, text="DOC 2", font=("Arial", 9, "bold"),
+                 bg="white", fg=self.primary_color).pack(anchor="w")
+        tk.Label(inner2, text="Novatech Confirmation / Receipt",
+                 font=("Arial", 8), bg="white", fg="#888").pack(anchor="w", pady=(0, 10))
+
         self.file2_label = tk.Label(
-            doc2_frame,
-            text="No file selected",
-            font=("Arial", 10),
-            bg=self.bg_color,
-            fg="#666",
-            anchor="w"
+            inner2, text="No file selected",
+            font=("Arial", 9), bg="white", fg="#aaa", anchor="w",
+            wraplength=260, justify="left"
         )
-        self.file2_label.pack(fill=tk.X, pady=(0, 10))
+        self.file2_label.pack(fill=tk.X, pady=(0, 12))
 
-        btn2 = tk.Button(
-            doc2_frame,
-            text="📁 Browse for PDF",
-            font=("Arial", 11, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#5490b8",
-            activeforeground="white",
-            cursor="hand2",
-            command=lambda: self.browse_file(2),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        btn2.pack()
+        tk.Button(
+            inner2, text="📁  Browse PDF",
+            font=("Arial", 10, "bold"),
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=lambda: self.browse_file(2),
+            relief=tk.FLAT, padx=16, pady=9
+        ).pack(fill=tk.X)
 
         # Compare button
         self.compare_btn = tk.Button(
-            content_frame,
-            text="⚡ Compare Documents",
-            font=("Arial", 14, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            activebackground="#667eea",
-            activeforeground="white",
-            cursor="hand2",
-            command=self.compare_documents,
-            relief=tk.FLAT,
-            padx=30,
-            pady=15,
+            body,
+            text="⚡  Compare Documents",
+            font=("Arial", 13, "bold"),
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=self.compare_documents,
+            relief=tk.FLAT, padx=30, pady=14,
             state=tk.DISABLED
         )
-        self.compare_btn.pack(fill=tk.X, pady=(0, 20))
+        self.compare_btn.pack(fill=tk.X, pady=(18, 0))
 
         # Progress bar
-        self.progress = ttk.Progressbar(
-            content_frame,
-            mode='indeterminate',
-            length=300
-        )
+        self.progress = ttk.Progressbar(body, mode='indeterminate')
 
-        # Result frame
-        self.result_frame = tk.Frame(content_frame, bg=self.bg_color)
-        self.result_frame.pack(fill=tk.BOTH, expand=True)
+        # Result area
+        self.result_frame = tk.Frame(body, bg=self.bg_color)
+        self.result_frame.pack(fill=tk.BOTH, expand=True, pady=(16, 0))
 
     def browse_file(self, file_num):
         filename = filedialog.askopenfilename(
             title=f"Select Document {file_num}",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
-
         if filename:
+            display_name = filename.replace('\\', '/').split('/')[-1]
             if file_num == 1:
                 self.file1_path = filename
-                display_name = filename.replace('\\', '/').split('/')[-1]
-                self.file1_label.config(
-                    text=f"✓ {display_name}",
-                    fg=self.success_color
-                )
+                self.file1_label.config(text=f"✓ {display_name}", fg=self.success_color)
             else:
                 self.file2_path = filename
-                display_name = filename.replace('\\', '/').split('/')[-1]
-                self.file2_label.config(
-                    text=f"✓ {display_name}",
-                    fg=self.success_color
-                )
+                self.file2_label.config(text=f"✓ {display_name}", fg=self.success_color)
 
             if self.file1_path and self.file2_path:
                 self.compare_btn.config(state=tk.NORMAL)
-    
+
     def compare_documents(self):
         for widget in self.result_frame.winfo_children():
             widget.destroy()
@@ -352,12 +238,14 @@ class DocumentMatcherGUI:
     
     def extract_order_number(self, text: str, doc_type: str) -> str:
         if doc_type == "DALMEN":
-            # "Numéro de PO.:V-003265"
             match = re.search(r'Num[ée]ro\s+de\s+PO\.:?\s*(V-\d+)', text, re.IGNORECASE)
             if match:
                 return match.group(1)
         else:  # NOVATECH
-            # "#BC client V-003265" or just "V-003265"
+            match = re.search(r'Votre no\.\s+de commande\s+(V-\d+)', text)
+            if match:
+                return match.group(1)
+
             match = re.search(r'(V-\d+)', text)
             if match:
                 return match.group(1)
@@ -417,15 +305,106 @@ class DocumentMatcherGUI:
 
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
-        
-    
+
+    def parse_glaze_novatech_facture(self, text: str, target_po: str) -> List[LineItem]:
+        items = []
+        lines = text.split('\n')
+
+        print(f"\nDEBUG: Parsing Novatech facture...")
+
+        for i, line in enumerate(lines):
+            line = line.strip()
+
+            match = re.match(r'^\d+\s+(\d{2}-\d{3}-\d{3}-\d{3})\s+(.+)', line)
+            if match:
+                product_code = match.group(1).strip()
+                description = match.group(2).strip()
+
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    if not re.match(r'^\d+\s+\d{2}-\d{3}', next_line) and not next_line.startswith('Tag Client'):
+                        description += " " + next_line
+
+                annexe_pr = ""
+                for j in range(i, min(i+5, len(lines))):
+                    tag_match = re.search(r'Tag Client:\s*([\d\-]+)', lines[j])
+                    if tag_match:
+                        annexe_pr = tag_match.group(1).strip()
+                        break
+
+                print(f"  Found: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
+
+                unit_price = 0.0
+                price_match = re.search(r'CH\s+(\d+\.\d{2})', description)
+                if price_match:
+                    unit_price = float(price_match.group(1))
+                    print(f" Unit Price: ${unit_price:.2f}")
+
+                items.append(LineItem(
+                    product_code=product_code,
+                    annexe_pr=annexe_pr,
+                    description=description,
+                    quantity=1,
+                    unit_price=unit_price
+                ))
+
+        print(f"DEBUG: Total items extracted: {len(items)}\n")
+        return items
+
+    def parse_slab_novatech_facture(self, text: str, target_po: str) -> List[LineItem]:
+        items = []
+        lines = text.split('\n')
+
+        print(f"DEBUG: Parsing through Novatech Slab Facture...")
+
+        in_table = False
+
+        for i, line in enumerate(lines):
+            line = line.strip()
+
+            if 'Produit' in line and 'Description' in line:
+                in_table = True
+                continue
+
+            if 'Facture Sous-Total' in line or 'Facture TOTAL' in line or 'Expédié à:' in line:
+                print(f" DEBUG: Reached end of items at line {i}")
+                break
+
+            if not in_table:
+                continue
+
+            match = re.match(r'^\d+\s+(\d{2}-\d{3}-\d{3}-\d{3}(?:-\d{3})?)\s+(.+?)\s+\d+\s+\d+\s+CH\s+(\d+\.\d{2})\s+\d+\.\d{2}$', line)
+            if match:
+                product_code = match.group(1).strip()
+                description = match.group(2).strip()
+                unit_price = float(match.group(3))
+
+                annexe_pr = ""
+                for k in range(i+1, min(i+10, len(lines))):
+                    tag_match = re.search(r'Tag Client:\s*([\d\-]+)', lines[k])
+                    if tag_match:
+                        annexe_pr = tag_match.group(1).strip()
+                        break
+
+                print(f" Found: {product_code} | Annexe: {annexe_pr} | Price: ${unit_price:.2f} | DESC: {description[:50]}")
+
+                items.append(LineItem(
+                    product_code=product_code,
+                    annexe_pr=annexe_pr,
+                    description=description,
+                    quantity=1,
+                    unit_price=unit_price
+                ))
+
+        print(f"DEBUG: Total SLAB facture items extracted: {len(items)}\n")
+        return items
+
     def parse_glaze_novatech_confirmation(self, text: str, target_po: str) -> List[LineItem]:
         """Parse Novatech confirmation (handles multi-page)"""
         items = []
         lines = text.split('\n')
         
         print(f"\nDEBUG: Parsing Novatech confirmation...")
-
 
         for i, line in enumerate(lines):
             line = line.strip()
@@ -441,8 +420,6 @@ class DocumentMatcherGUI:
                     if annexe_match:
                         annexe_pr = annexe_match.group(1)
                         break
-                    
-
 
                 print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
 
@@ -452,6 +429,7 @@ class DocumentMatcherGUI:
                     description=description,
                     quantity=1
                 ))
+
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
     
@@ -463,7 +441,8 @@ class DocumentMatcherGUI:
 
         for line in lines:
             line = line.strip()
-            match = re.match(r'^([\d\-]+)\s+(\d+)\s+([\d\-]+)\s+(.+)$', line)
+
+            match = re.match(r'^(\d{2}-\d{3}-\d{3}-\d{3}(?:-\w+)?)\s+(\d+)\s+([\d\-]+)\s+(.+)$', line)
 
             if match: 
                 product_code = match.group(1).strip()
@@ -479,9 +458,9 @@ class DocumentMatcherGUI:
                     description=description,
                     quantity=quantity
                 ))
+
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
-
 
     def parse_slab_novatech_confirmation(self, text: str, target_po: str) -> List[LineItem]:
         items = []
@@ -513,13 +492,218 @@ class DocumentMatcherGUI:
                 items.append(LineItem(
                     product_code=product_code,
                     annexe_pr=annexe_pr,
-                    description = description,
+                    description=description,
                     quantity=1
                 ))
 
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
-    
+
+    def find_price_in_catalog(self, product_code: str, pdf_path: str) -> float:
+        try:
+            print(f" Searching catalog (this may take a bit)...")
+
+            with pdfplumber.open(pdf_path) as pdf:
+                total_pages = len(pdf.pages)
+
+                for page_num, page in enumerate(pdf.pages, 1):
+                    if page_num % 20 == 0:
+                        print(f" Scanning page {page_num}/{total_pages}...")
+
+                    img = page.to_image(resolution=300)
+                    pil_img = img.original
+
+                    text = pytesseract.image_to_string(pil_img)
+
+                    if product_code in text:
+                        print(f" Found {product_code} on page")
+
+                        lines = text.split('\n')
+                        for line in lines:
+                            if product_code in line:
+                                print(f" Line: {line[:100]}")
+
+                                pattern = rf'{re.escape(product_code)}\s+(\d+\.\d{{2}})\s+\d+'
+                                price_match = re.search(pattern, line)
+
+                                if price_match:
+                                    price = float(price_match.group(1))
+                                    print(f" Extracted price: ${price:.2f}")
+                                    return price
+
+                                print(f" Trying fallback extraction...")
+                                all_numbers = re.findall(r'(\d+\.\d{2})', line)
+                                prices = [float(n) for n in all_numbers if float(n) > 10.0]
+
+                                if prices:
+                                    price = prices[0]
+                                    print(f" Extracted price (fallback): ${price:.2f}")
+                                    return price
+                                else:
+                                    print(f" No valid prices found (numbers: {all_numbers})")
+           
+
+                                all_prices = re.findall(fr'(\d+\.\d{2})', line)
+                                if all_prices:
+                                    for p in reversed(all_prices):
+                                        if float(p) > 10:
+                                            price = float(p)
+                                            print(f" Extracted price (fallback): ${price:.2f}")
+                                            return price
+                                    
+                       
+            print(f" {product_code} not found after scanning {total_pages} pages")
+            return None
+            
+        except Exception as e:
+            print(f" Error searching for {product_code}: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def verify_prices(self, doc2_items: List[LineItem]) -> None:
+        pdf_path = r"G:\2026 PRICE LIST\NOVATECH GLAZING 2026.pdf"
+
+        print(f"\n{'='*60}")
+        print("PRICE VERIFICATION (GLAZING)")
+        print(f"{'='*60}")
+
+        for item in doc2_items:
+            code = item.product_code
+            facture_price = item.unit_price
+
+            print(f"\nSearching catalog for {code}...")
+            catalog_price = self.find_price_in_catalog(code, pdf_path)
+
+            if catalog_price:
+                markup = ((facture_price - catalog_price) / catalog_price) * 100
+                print(f" Catalog: ${catalog_price:.2f}")
+                print(f" Facture: ${facture_price:.2f}")
+                print(f" Markup: {markup:.2f}%")
+
+                if abs(markup - 27.87) > 2.0:
+                    print(f" Markup OUTSIDE expected range (25.87% - 29.87%)")
+                else:
+                    print(f" Markup OK")
+            else:
+                print(f" Not found in catalog")
+
+    def load_novatech_price_catalog(self) -> Dict[str, float]:
+        try:
+            excel_path = r"G:\2026 PRICE LIST\NOVATECH GLAZING PRICE LIST 2026 EXCEL VERSION.xlsx"
+
+            print(f"DEBUG: Loading Novatech price catalog from Excel...")
+
+            df = pd.read_excel(excel_path,sheet_name="Novatech_Prix_2026_Part1_Pages1")
+
+            if 'Code' in df.columns:
+                code_col = 'Code'
+            elif 'code' in df.columns:
+                code_col = 'code'
+            else:
+                code_col = df.columns[6]
+
+            if 'Prix' in df.columns:
+                price_col = 'Prix'
+            elif 'prix' in df.columns:
+                price_col = 'prix'
+            else:
+                price_col = df.columns[7]
+
+            print(f"DEBUG: Using columns - Code: {code_col}, Prix: {price_col}")
+            
+
+            catalog = {}
+            for idx, row in df.iterrows():
+                code = str(row[code_col]).strip()
+                price = row[price_col]
+
+                if pd.notna(code) and pd.notna(price) and '-' in code:
+                    try:
+                        catalog[code] = float(price)
+                    except:
+                        continue
+
+            print(f"DEBUG: Loaded {len(catalog)} codes from catalog")
+            print(f"DEBUG: Sample codes: {list(catalog.keys())[:5]}")
+            return catalog
+
+        except Exception as e:
+            print(f"WARNING: Could not load Novatech price catalog: {e}")
+            return {}
+
+    def load_novatech_slab_price_catalog(self) -> Dict[str, Dict]:
+        try:
+            excel_path = r"G:\2026 PRICE LIST\Novatech_Prix_2026_SLAB.xlsx"
+
+            print(f"DEBUG: Loading Novatech SLAB price catalog from Excel...")
+
+
+            xl_file = pd.ExcelFile(excel_path)
+            available_sheets = xl_file.sheet_names
+            print(f"DEBUG: Available sheets: {available_sheets}")
+
+            sheets = [s for s in available_sheets if s.startswith('N')]
+            print(f"DEBUG: Loading sheets: {sheets}")
+
+            catalog = {}
+
+            for sheet_name in sheets:
+                try:
+                    df = pd.read_excel(excel_path, sheet_name=sheet_name)
+
+                    price_col = df.columns[5]
+                    code_col = df.columns[6]
+
+                    sheet_count = 0
+                    for idx, row in df.iterrows():
+                        code = str(row[code_col]).strip()
+                        price = row[price_col]
+
+                        if pd.notna(code) and pd.notna(price) and '-' in code:
+                            try:
+                                parts = code.split('-')
+                                if len(parts) >= 3:
+                                    base_code = '-'.join(parts[:3])
+
+                                    catalog[base_code] = {
+                                    'price': float(price),
+                                    'section': sheet_name,
+                                    'full_code': code
+                                }
+                                sheet_count += 1
+                            except:
+                                continue
+
+                    print(f"DEBUG: Total SLAB codes loaded {len(catalog)}")
+                    print(f"DEBUG: Sample codes: {list(catalog.keys())[:5]}")
+
+                    # DEBUG: Search for the specific code
+                    print(f"\nDEBUG: Searching for codes starting with '75-076'...")
+                    matching_codes = [k for k in catalog.keys() if k.startswith('75-076')]
+                    print(f"DEBUG: Found {len(matching_codes)} codes starting with 75-076")
+                    if matching_codes:
+                        print(f"DEBUG: Matches: {matching_codes[:10]}")
+                        # Show which section they're in
+                        for code in matching_codes[:5]:
+                            print(f"  {code} → Section: {catalog[code]['section']}, Full: {catalog[code]['full_code']}, Price: {catalog[code]['price']}")
+
+                            print(f" {sheet_name}: Loaded {sheet_count} codes")
+
+                except Exception as e:
+                    print(f" WARNING: Could not load sheet {sheet_name}: {e}")
+                    continue
+
+            print(f"DEBUG: Total SLAB codes loaded {len(catalog)}")
+            print(f"DEBUG: Sample codes: {list(catalog.keys())[:5]}")
+            return catalog
+        
+        except Exception as e:
+            print(f" WARNING: Could not load Novatech SLAB price catalog: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+
 
     def parse_document(self, pdf_path: str, doc_type: str = None) -> OrderDocument:
         
@@ -530,7 +714,7 @@ class DocumentMatcherGUI:
         if not doc_type:
             if "Commande de vitraux" in text or "Fournisseur :" in text:
                 doc_type = "DALMEN"
-            elif "Confirmation de Commande" in text and "GROUPE NOVATECH" in text:
+            elif "GROUPE NOVATECH" in text or "Novatech" in text:
                 doc_type = "NOVATECH"
             else:
                 doc_type = "UNKNOWN"
@@ -538,7 +722,7 @@ class DocumentMatcherGUI:
         print(f"DEBUG: Detected document type: {doc_type}")
 
         is_slab = False
-        if "Coupe-FEU" in text or "COUPE FEU" in text or "N600" in text:
+        if "Coupe-FEU" in text or "COUPE FEU" in text or "N600" in text or "N700" in text or "N900" in text or "VOG" in text:
             is_slab = True
             print("DEBUG: Document detected as SLAB")
         else:
@@ -547,16 +731,31 @@ class DocumentMatcherGUI:
         order_number = self.extract_order_number(text, doc_type)
         print(f"DEBUG: Extracted order number: {order_number}")
 
+        is_facture = False
+        if doc_type == "NOVATECH":
+            if "Facture" in text or "FACTURE" in text or "Numéro de facture" in text or "Votre no. de commande" in text:
+                is_facture = True
+                print("DEBUG: Document detected as NOVATECH FACTURE")
+            else:
+                print("DEBUG: Document detected as NOVATECH CONFIRMATION")
+            print(f"DEBUG: is_facture = {is_facture}")
+
         if doc_type == "DALMEN":
             if is_slab:
                 line_items = self.parse_slab_dalmen_order(text, order_number)
             else:
                 line_items = self.parse_glaze_dalmen_order(text, order_number)
         elif doc_type == "NOVATECH":
-            if is_slab:
-                line_items = self.parse_slab_novatech_confirmation(text, order_number)
+            if is_facture:
+                if is_slab:
+                    line_items = self.parse_slab_novatech_facture(text, order_number)
+                else:
+                    line_items = self.parse_glaze_novatech_facture(text, order_number)
             else:
-                line_items = self.parse_glaze_novatech_confirmation(text, order_number)
+                if is_slab:
+                    line_items = self.parse_slab_novatech_confirmation(text, order_number)
+                else:
+                    line_items = self.parse_glaze_novatech_confirmation(text, order_number)
         else:
             line_items = []
 
@@ -575,7 +774,7 @@ class DocumentMatcherGUI:
         log.append("NOVATECH WINDOWS ORDER MATCHING")
         log.append("="*60)
         
-        log.append(f"\n[\nORDER NUMBERS]")
+        log.append(f"\n[ORDER NUMBERS]")
         log.append(f" Doc1: {doc1.order_number}")
         log.append(f" Doc2: {doc2.order_number}")
         
@@ -585,19 +784,15 @@ class DocumentMatcherGUI:
         else:
             log.append(" ❌ Order numbers do NOT match")
 
-        # Get all the unique Annexe bases from first document
         doc1_bases = set()
         for item in doc1.line_items:
             if item.annexe_pr and len(item.annexe_pr.split('-')) >= 2:
-                # Extract base: "382-01135-04-1" -> "382-01135"
                 base = '-'.join(item.annexe_pr.split('-')[:2])
                 doc1_bases.add(base)
 
-        # Get all the unique Annexe bases from second document
         doc2_bases = set()
         for item in doc2.line_items:
             if item.annexe_pr and len(item.annexe_pr.split('-')) >= 2:
-                # Extract base: "382-01135-04-1" -> "382-01135"
                 base = '-'.join(item.annexe_pr.split('-')[:2])
                 doc2_bases.add(base)
 
@@ -624,21 +819,24 @@ class DocumentMatcherGUI:
         log.append(f"{'='*60}")
         for item in doc1.line_items:
             log.append(f" {item.product_code} | Annexe: {item.annexe_pr}")
-            log.append(F" {item.description[:80]}")
+            log.append(f" {item.description[:80]}")
 
         log.append(f"\n{'='*60}")
         log.append(f" DOC2 LINE ITEMS:")
         log.append(f"{'='*60}")
         for item in doc2.line_items:
             log.append(f" {item.product_code} | Annexe: {item.annexe_pr}")
-            log.append(F" {item.description[:80]}")
+            log.append(f" {item.description[:80]}")
 
         log.append(f"\n{'='*60}")
         log.append(f"MATCHING RESULTS:")
         log.append(f"\n{'='*60}")
 
         matched = 0
-        total_items = max(len(doc1.line_items), len(doc2.line_items)) 
+        total_items = max(len(doc1.line_items), len(doc2.line_items))
+
+        is_slab_matching = any('N900' in item.description or 'N600' in item.description or 'Coupe-FEU' in item.description 
+                                for item in doc1.line_items + doc2.line_items)
 
         for item1 in doc1.line_items:
             best_score = 0
@@ -655,9 +853,10 @@ class DocumentMatcherGUI:
                 if code_sim > 0.8:
                     score += 30
 
-                desc_sim = self.calculate_similarity(item1.description, item2.description)
-                if desc_sim > 0.6:
-                    score += 20
+                if not is_slab_matching:
+                    desc_sim = self.calculate_similarity(item1.description, item2.description)
+                    if desc_sim > 0.6:
+                        score += 20
 
                 if score > best_score:
                     best_score = score
@@ -681,6 +880,151 @@ class DocumentMatcherGUI:
         match_percentage = (matched / total_items * 100) if total_items > 0 else 0
         documents_match = match_percentage >= 70 and order_match
 
+        is_glazing = not any('N900' in item.description or 'N900v2' in item.description or 'N900v3' in item.description or
+                             'N600' in item.description or 'N700' in item.description or 'N300' in item.description or
+                             'Coupe-FEU' in item.description for item in doc1.line_items + doc2.line_items)
+
+        if is_glazing:
+                log.append(f"\n{'='*60}")
+                log.append("PRICE VERIFICATION (GLAZING)")
+                log.append(f"{'='*60}")
+
+                catalog = self.load_novatech_price_catalog()
+                expected_markup = 27.87
+                tolerance = 2.0
+                price_issues = []
+
+                print(f"\nStarting price verification for {len(doc2.line_items)} items...")
+
+                for item in doc2.line_items:
+                    code = item.product_code
+                    facture_price = item.unit_price
+
+                    if facture_price == 0:
+                        log.append(f"\n{code}")
+                        log.append(f" No price extracted from facture")
+                        continue
+                        
+                    catalog_price = catalog.get(code)
+
+                    if catalog_price:
+                        actual_markup = ((catalog_price - facture_price) / facture_price) * 100
+                        expected_range = f"{expected_markup - tolerance:.2f}% - {expected_markup + tolerance:.2f}%"
+
+                        log.append(f"\n{code}")
+                        log.append(f"  Catalog Price: ${catalog_price:.2f}")
+                        log.append(f"  Facture Price: ${facture_price:.2f}")
+                        log.append(f"  Actual Markup: {actual_markup:.2f}%")
+                        log.append(f"  Expected Range: {expected_range}")
+
+                        if abs(actual_markup - expected_markup) > tolerance:
+                            log.append(f" MARKUP OUTSIDE TOLERANCE!!")
+                            price_issues.append({
+                                'code': code,
+                                'catalog': catalog_price,
+                                'facture': facture_price,
+                                'markup': actual_markup
+                            })
+                        else:
+                            log.append(f" Markup OK")
+                    else:
+                        log.append(f"\n{code}")
+                        log.append(f" Not found in catalog")
+                        price_issues.append({
+                            'code': code,
+                            'catalog': None,
+                            'facture': facture_price,
+                            'markup': None
+                        })
+
+                if price_issues:
+                    log.append(f"\n⚠️ Found {len(price_issues)} items with pricing issues!")
+                else:
+                    log.append(f"\n✅ All prices verified within tolerance!")
+
+        is_slab = not is_glazing
+
+        if is_slab:
+            log.append(f"\n{'='*60}")
+            log.append("PRICE VERIFICATION (SLAB)")
+            log.append(f"{'='*60}")
+
+            catalog = self.load_novatech_slab_price_catalog()
+
+            section_markups = {
+                'N300': {'discount': 0.478, 'markup_pct': 52.20, 'tolerance': 2.0},
+                'N600': {'discount': 0.535, 'markup_pct': 46.50, 'tolerance': 2.0},
+                'N700': {'discount': 0.535, 'markup_pct': 46.50, 'tolerance': 2.0},
+                'N900': {'discount': 0.598, 'markup_pct': 40.20, 'tolerance': 2.0}
+            }
+
+            price_issues = []
+
+            print(f"\nStarting price verification for {len(doc2.line_items)} items...")
+
+            for item in doc2.line_items:
+                code = item.product_code
+                facture_price = item.unit_price
+
+                if facture_price == 0:
+                    log.append(f"\n{code}")
+                    log.append(f" No price extracted from facture")
+                    continue
+
+                parts = code.split('-')
+                base_code = '-'.join(parts[:3]) if len(parts) >= 3 else code
+
+                catalog_entry = catalog.get(base_code)
+
+                if catalog_entry:
+                    catalog_price = catalog_entry['price']
+                    section = catalog_entry['section']
+
+                    markup_info = section_markups.get(section, section_markups['N900'])
+                    expected_discount = markup_info['discount']
+                    tolerance = markup_info['tolerance']
+
+                    expected_facture_price = catalog_price * expected_discount
+                    price_difference = abs(facture_price - expected_facture_price)
+
+                    log.append(f"\n{code} [{section}]")
+                    log.append(f"  Catalog Price: ${catalog_price:.2f}")
+                    log.append(f"  Expected Facture: ${expected_facture_price:.2f}")
+                    log.append(f"  Actual Facture: ${facture_price:.2f}")
+                    log.append(f"  Difference: ${price_difference:.2f}")
+                    log.append(f"  Price Multiplier: {expected_discount:.3f}")
+                    log.append(f"  Tolerance: ±${tolerance:.2f}")
+
+                    if price_difference > tolerance:
+                        log.append(f" PRICE OUTSIDE TOLERANCE!!")
+                        price_issues.append({
+                            'code': code,
+                            'section': section,
+                            'catalog': catalog_price,
+                            'expected': expected_facture_price,
+                            'facture': facture_price,
+                            'difference': price_difference
+                        })
+                    else:
+                        log.append(f" PRICE OK")
+                else:
+                    log.append(f"\n{code}")
+                    log.append(f" Not found in catalog")
+                    price_issues.append({
+                        'code': code,
+                        'section': 'UNKNOWN',
+                        'catalog': None,
+                        'facture': facture_price,
+                        'difference': None
+                    })
+
+            if price_issues:
+                log.append(f"\n⚠️ Found {len(price_issues)} items with pricing issues!")
+            else:
+                log.append(f"\n✅ All prices verified within tolerance!")
+        
+        self.match_log = "\n".join(log)
+
         log.append(f"\n{'='*60}")
         log.append(f"FINAL RESULT: {matched}/{total_items} items matched ({match_percentage:.1f}%)")
         log.append(f"Order numbers: {'MATCH' if order_match else 'NO MATCH'}")
@@ -696,116 +1040,116 @@ class DocumentMatcherGUI:
             "matched_items": matched,
             "total_items": total_items,
             "order1": doc1.order_number,
-            "order2": doc2.order_number
+            "order2": doc2.order_number,
+            "order_match": order_match,
         }
-        
+
+    # ── UI DISPLAY ────────────────────────────────────────────────────────────
+
     def display_result(self, result):
         self.progress.stop()
         self.progress.pack_forget()
         self.compare_btn.config(state=tk.NORMAL)
-        self.log_btn.config(state=tk.NORMAL, bg=self.primary_color)
-        self.print_btn.config(state=tk.NORMAL, bg=self.primary_color)
+        self.log_btn.config(state=tk.NORMAL)
 
         for widget in self.result_frame.winfo_children():
             widget.destroy()
 
-        if result['match']:
-            bg_color = self.success_color
-            icon = "✅"
-            title = "DOCUMENTS MATCH"
-            message = "Window order confirmed!"
-        else:
-            bg_color = self.error_color
-            icon = "❌"
-            title = "DOCUMENTS DO NOT MATCH"
-            message = "There are discrepancies in the order."
+        is_match = result['match']
+        accent = self.success_color if is_match else self.error_color
 
-        result_card = tk.Frame(self.result_frame, bg=bg_color, padx=20, pady=20)
-        result_card.pack(fill=tk.BOTH, expand=True)
+        # Result card
+        card = tk.Frame(self.result_frame, bg="white", bd=1, relief=tk.SOLID)
+        card.pack(fill=tk.BOTH, expand=True)
 
-        icon_label = tk.Label(
-            result_card,
-            text=icon,
-            font=("Arial", 48),
-            bg=bg_color,
-            fg="white"
-        )
-        icon_label.pack()
-        
-        title_label = tk.Label(
-            result_card,
-            text=title,
-            font=("Arial", 18, "bold"),
-            bg=bg_color,
-            fg="white"
-        )
-        title_label.pack(pady=(10, 5))
-        
-        message_label = tk.Label(
-            result_card,
-            text=message,
-            font=("Arial", 11),
-            bg=bg_color,
-            fg="white"
-        )
-        message_label.pack(pady=(0, 20))
-        
-        details_frame = tk.Frame(result_card, bg="white", padx=15, pady=15)
-        details_frame.pack(fill=tk.BOTH, expand=True)
-        
-        details = [
-            ("Order Numbers:", f"{result['order1']} ↔ {result['order2']}"),
-            ("Confidence:", f"{result['confidence']:.1f}%"),
-            ("Matched Items:", f"{result['matched_items']} / {result['total_items']}"),
-        ]
+        # Coloured top stripe
+        tk.Frame(card, bg=accent, height=5).pack(fill=tk.X)
 
-        for label, value in details:
-            row_frame = tk.Frame(details_frame, bg="white")
-            row_frame.pack(fill=tk.X, pady=5)
-            
-            tk.Label(
-                row_frame,
-                text=label,
-                font=("Arial", 10, "bold"),
-                bg="white",
-                anchor="w"
-            ).pack(side=tk.LEFT)
-            
-            tk.Label(
-                row_frame,
-                text=value,
-                font=("Arial", 10),
-                bg="white",
-                anchor="e"
-            ).pack(side=tk.RIGHT)
-        
+        inner = tk.Frame(card, bg="white", padx=24, pady=18)
+        inner.pack(fill=tk.BOTH, expand=True)
+
+        # Icon + verdict + confidence
+        top_row = tk.Frame(inner, bg="white")
+        top_row.pack(fill=tk.X)
+
+        icon = "✅" if is_match else "❌"
+        verdict = "DOCUMENTS MATCH" if is_match else "DOCUMENTS DO NOT MATCH"
+
+        tk.Label(top_row, text=icon, font=("Arial", 28),
+                 bg="white").pack(side=tk.LEFT)
+
+        tk.Label(top_row, text=verdict,
+                 font=("Arial", 16, "bold"), bg="white", fg=accent
+                 ).pack(side=tk.LEFT, padx=12)
+
+        tk.Label(top_row,
+                 text=f"{result['confidence']:.0f}% confidence",
+                 font=("Arial", 11), bg="white", fg="#666"
+                 ).pack(side=tk.RIGHT)
+
+        # Divider
+        tk.Frame(inner, bg="#e0e0e0", height=1).pack(fill=tk.X, pady=(14, 14))
+
+        # Stats row
+        stats = tk.Frame(inner, bg="white")
+        stats.pack(fill=tk.X, pady=(0, 14))
+
+        def stat_box(parent, label, value, col):
+            box = tk.Frame(parent, bg="#f8f8f8", padx=14, pady=10, bd=1, relief=tk.SOLID)
+            box.grid(row=0, column=col, padx=(0 if col == 0 else 8, 0), sticky="ew")
+            parent.columnconfigure(col, weight=1)
+            tk.Label(box, text=value, font=("Arial", 14, "bold"),
+                     bg="#f8f8f8", fg="#222").pack()
+            tk.Label(box, text=label, font=("Arial", 8),
+                     bg="#f8f8f8", fg="#888").pack()
+
+        order_icon = "✅" if result.get('order_match') else "❌"
+        stat_box(stats, "Order Numbers",  f"{order_icon}  {result['order1']} / {result['order2']}", 0)
+        stat_box(stats, "Items Matched",  f"{result['matched_items']} / {result['total_items']}", 1)
+        stat_box(stats, "Confidence",     f"{result['confidence']:.1f}%", 2)
+        stat_box(stats, "Order Match",    f"{order_icon}  {'Yes' if result.get('order_match') else 'No'}", 3)
+
+        # View Log button
         tk.Button(
-            details_frame,
-            text="📋 View Detailed Log",
+            inner,
+            text="📋  View Detailed Log",
             font=("Arial", 10, "bold"),
-            bg=self.primary_color,
-            fg="white",
-            cursor="hand2",
-            command=self.show_log_window,
-            relief=tk.FLAT,
-            padx=15,
-            pady=8
-        ).pack(pady=(15, 0))
+            bg=self.primary_color, fg="white",
+            cursor="hand2", command=self.show_log_window,
+            relief=tk.FLAT, padx=18, pady=9
+        ).pack(fill=tk.X)
 
     def display_error(self, error_msg):
         self.progress.stop()
         self.progress.pack_forget()
-        self.compare_btn.config(state=tk.DISABLED)
+        self.compare_btn.config(state=tk.NORMAL)
+        messagebox.showerror("Error", f"Failed to process documents:\n\n{error_msg}")
 
-        messagebox.showerror(
-            "Error",
-            f"Failed to process documents:\n\n{error_msg}"
-        )
+    def show_log_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Detailed Matching Log")
+        win.geometry("800x600")
+
+        header = tk.Frame(win, bg=self.primary_color, padx=10, pady=10)
+        header.pack(fill=tk.X)
+        tk.Label(header, text="Detailed Matching Log", font=("Arial", 16, "bold"),
+                 bg=self.primary_color, fg="white").pack()
+
+        ta = scrolledtext.ScrolledText(win, font=("Courier", 9), wrap=tk.WORD, padx=10, pady=10)
+        ta.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        ta.insert(1.0, self.match_log)
+        ta.config(state=tk.DISABLED)
+
+        tk.Button(win, text="Close", font=("Arial", 11, "bold"), bg=self.primary_color,
+                  fg="white", cursor="hand2", command=win.destroy,
+                  relief=tk.FLAT, padx=20, pady=10).pack(pady=10)
+
 
 def main():
     root = tk.Tk()
-    app = DocumentMatcherGUI(root)
+    DocumentMatcherGUI(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
