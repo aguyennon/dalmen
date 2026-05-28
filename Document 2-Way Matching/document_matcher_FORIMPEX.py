@@ -55,7 +55,7 @@ class DocumentMatcherGUI:
     
     def load_forimpex_price_list(self):
         self.forimpex_qty_per_pack = {}
-        price_list_path = r"G:\2026 PRICE LIST\ListePrix_FORIMPEX_LATEST.pdf"
+        price_list_path = r"\\10.0.7.2\Group\2026 PRICE LIST\ListePrix_FORIMPEX_LATEST.pdf"
         try:
             with pdfplumber.open(price_list_path) as pdf:
                 for page in pdf.pages:
@@ -577,10 +577,14 @@ class DocumentMatcherGUI:
             else:
                 qty_shipped = 0
 
+            price_match = re.search(r'([\d,]+\.\d{2})\$', rest)
+            unit_price = float(price_match.group(1).replace(',', '')) if price_match else 0.0
+
             items.append(LineItem(
                 product_code=normalized_code,
                 description=description,
                 quantity=qty_shipped,
+                unit_price=unit_price,
                 raw_code=product_code,
             ))
         
@@ -589,25 +593,9 @@ class DocumentMatcherGUI:
 
 
     def parse_document(self, pdf_path: str, doc_type: str = None) -> OrderDocument:
-        text = self.extract_pdf_text(pdf_path, page_num=1)
+        # just to detect doc type
+        text = self.extract_pdf_text(pdf_path)
 
-        if not text.strip():
-            text = self.extract_pdf_text(pdf_path)
-
-        if not text.strip():
-            print(f"DEBUG: No text found, trying OCR on page 2...")
-            try:
-                with pdfplumber.open(pdf_path) as pdf:
-                    if len(pdf.pages) > 1:
-                        page = pdf.pages[1]
-                        img = page.to_image(resolution=600)
-                        text = pytesseract.image_to_string(img.original)
-                        print(f"DEBUG: OCR extracted {len(text)} chars")
-            except Exception as e:
-                print(f"DEBUG: OCR failed: {e}")
-
-        print(f"\nDEBUG: Text preview (first 500 chars):\n{text[:500]}\n")
-        
         if not doc_type:
             if "FACTURE" in text:
                 doc_type = "FORIMPEX_FACTURE"
@@ -616,9 +604,25 @@ class DocumentMatcherGUI:
             elif "Dalmen Portes" in text or "Purchase Order" in text or "Bon de Commande" in text:
                 doc_type = "DALMEN"
             else:
-                doc_type = "UNKNOWN"
+                doc_type = "DALMEN"  # default assumption if pdfplumber got nothing
 
         print(f"DEBUG: Detected document type: {doc_type}")
+
+        # For Dalmen POs — always OCR page 2
+        if doc_type == "DALMEN":
+            try:
+                with pdfplumber.open(pdf_path) as pdf:
+                    page = pdf.pages[1] if len(pdf.pages) > 1 else pdf.pages[0]
+                    img = page.to_image(resolution=400)
+                    text = pytesseract.image_to_string(
+                        img.original,
+                        config='--psm 6 --oem 3 preserve_interword_spaces=1'
+                    )
+                    print(f"DEBUG: OCR extracted {len(text)} chars")
+            except Exception as e:
+                print(f"DEBUG: OCR failed: {e}")
+
+        print(f"\nDEBUG: Text preview (first 500 chars):\n{text[:500]}\n")
 
         order_number = self.extract_order_number(text, doc_type)
         print(f"DEBUG: Extracted order number: {order_number}")
@@ -645,180 +649,243 @@ class DocumentMatcherGUI:
 
 
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
-            log = []
-            log.append("="*60)
-            log.append("FORIMPEX ORDER MATCHING")
-            log.append("="*60)
+        log = []
 
-            log.append(f"\n[ORDER NUMBERS]")
-            log.append(f" Doc1: {doc1.order_number}")
-            log.append(f" Doc2: {doc2.order_number}")
+        order_match = doc1.order_number == doc2.order_number
 
-            order_match = doc1.order_number == doc2.order_number
-            if order_match:
-                log.append(" ✅ Order numbers match")
-            else:
-                log.append(" ❌ Order numbers do NOT match")
+        # ── SUMMARY ───────────────────────────────────────────────────────
+        log.append("=" * 60)
+        log.append("SUMMARY")
+        log.append("=" * 60)
 
-            log.append(f"\n{'='*60}\n")
-            log.append(f"DOC1 LINE ITEMS:")
-            log.append(f"{'='*60}")
-            for item in doc1.line_items:
-                log.append(f" {item.product_code} | Qty: {item.quantity}")
-                log.append(f" {item.description[:80]}")
+        col_width = 38
+        log.append(f"{'Doc1 — ' + str(len(doc1.line_items)) + ' items':<{col_width}}  {'Doc2 — ' + str(len(doc2.line_items)) + ' items'}")
+        log.append("-" * 60)
 
-            log.append(f"\n{'='*60}")
-            log.append(f" DOC2 LINE ITEMS:")
-            log.append(f"{'='*60}")
-            for item in doc2.line_items:
-                log.append(f" {item.product_code} | Qty: {item.quantity}")
-                log.append(f" {item.description[:80]}")
+        for i in range(max(len(doc1.line_items), len(doc2.line_items))):
+            left  = f"  {doc1.line_items[i].product_code} | Qty: {doc1.line_items[i].quantity}" if i < len(doc1.line_items) else ""
+            right = f"  {doc2.line_items[i].product_code} | Qty: {doc2.line_items[i].quantity}" if i < len(doc2.line_items) else ""
+            log.append(f"{left:<{col_width}}  {right}")
 
-            log.append(f"\n{'='*60}")
-            log.append(f"MATCHING RESULTS:")
-            log.append(f"\n{'='*60}")
+        log.append("")
+        po_str = "✅ MATCH" if order_match else "❌ NO MATCH"
+        log.append(f"  Order Numbers — Doc1: {doc1.order_number}  |  Doc2: {doc2.order_number}  →  {po_str}")
 
-            matched = 0
-            total_items = max(len(doc1.line_items), len(doc2.line_items))
+        # ── MATCHING PROCESS ──────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("MATCHING PROCESS")
+        log.append("=" * 60)
 
-            qty_matched = 0
-            qty_total = 0
-            # Handle empty documents
-            if len(doc1.line_items) == 0 or len(doc2.line_items) == 0:
-                if len(doc1.line_items) == 0:
-                    log.append("\n⚠️ No items found in Doc1 (Dalmen order)")
-                if len(doc2.line_items) == 0:
-                    log.append("\n⚠️ No items found in Doc2 (Forimpex confirmation)")
-                match_percentage = 0
-                documents_match = False
-            else:
-                facture_mode = doc1.doc_type == "FORIMPEX_FACTURE" or doc2.doc_type == "FORIMPEX_FACTURE"
-                for item1 in doc1.line_items:
-                    best_score = 0
-                    best_match = None
-                    kw1 = self.extract_keywords(item1.description)
+        matched     = 0
+        total_items = max(len(doc1.line_items), len(doc2.line_items))
+        qty_matched = 0
+        qty_total   = 0
+        facture_mode = doc1.doc_type == "FORIMPEX_FACTURE" or doc2.doc_type == "FORIMPEX_FACTURE"
 
-                    for item2 in doc2.line_items:
-                        score = 0
+        if len(doc1.line_items) == 0 or len(doc2.line_items) == 0:
+            log.append("")
+            if len(doc1.line_items) == 0:
+                log.append("  ⚠️  No items found in Doc1 (Dalmen order)")
+            if len(doc2.line_items) == 0:
+                log.append("  ⚠️  No items found in Doc2 (Forimpex confirmation)")
+            match_percentage = 0
+            documents_match  = False
+        else:
+            for item1 in doc1.line_items:
+                best_score = 0
+                best_match = None
+                kw1 = self.extract_keywords(item1.description)
 
-                        if item1.product_code == item2.product_code:
-                            score += 60
-                        
-                        if facture_mode:
-                            def get_dim(code):
-                                m = re.search(r'-(\d{2,3})"?$', code.replace(' ', ''))
-                                return m.group(1) if m else None
+                for item2 in doc2.line_items:
+                    score = 0
+                    if item1.product_code == item2.product_code:
+                        score += 60
 
-                            dim1 = get_dim(item1.raw_code)
-                            dim2 = get_dim(item2.raw_code)
-                            
-                            desc_dims1 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item1.description.upper()))
-                            desc_dims2 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item2.description.upper()))
+                    if facture_mode:
+                        def get_dim(code):
+                            m = re.search(r'-(\d{2,3})"?$', code.replace(' ', ''))
+                            return m.group(1) if m else None
 
-                            if dim1 and dim2:
-                                if dim1 == dim2:
-                                    score += 25 
-                            elif desc_dims1 and desc_dims2:
-                                if desc_dims1 & desc_dims2:
-                                    score += 25
-                            # Finish keywords — 15 pts
-                            finish = {'NOIR', 'BLANC', 'BK', 'WH', 'NOIRES', 'ALUMINIUM'}
-                            kw2 = self.extract_keywords(item2.description)
-                            if kw1 & finish & kw2:
-                                score += 15
-                        else:
-                            kw2 = self.extract_keywords(item2.description)
+                        dim1 = get_dim(item1.raw_code)
+                        dim2 = get_dim(item2.raw_code)
+                        desc_dims1 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item1.description.upper()))
+                        desc_dims2 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item2.description.upper()))
 
-                            dim1 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item1.description.upper()))
-                            dim2 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item2.description.upper()))
-                            if dim1 and dim2 and dim1 & dim2:
-                                score += 20
+                        if dim1 and dim2:
+                            if dim1 == dim2:
+                                score += 25
+                        elif desc_dims1 and desc_dims2:
+                            if desc_dims1 & desc_dims2:
+                                score += 25
 
-                            finish = {'NOIR', 'BLANC', 'BK', 'WH', 'NOIRES', 'ALUMINIUM', 'RECOUVREMENT', 'REVETEMENT', 'BALAI'}
-                            if kw1 & finish & kw2:
-                                score += 10
-
-                        if score > best_score:
-                            best_score = score
-                            best_match = item2
-
-                    log.append(f"\n{item1.product_code} | PO Qty: {item1.quantity} paquets")
-                    log.append(f" Description: {item1.description[:60]}")
-                    
-                    if best_match:
-                        log.append(f" → Best match: {best_match.product_code} | Shipped: {best_match.quantity} units")
-                        log.append(f"    Similarity Score: {best_score}/100")
-
-                        if best_score >= 70:
-                            log.append("    ✅ MATCH")
-                            matched += 1
-                            if facture_mode and best_match.quantity > 0:
-                                facture_full_code = best_match.raw_code.upper() if best_match.raw_code else ""
-                                qty_per_pack = self.forimpex_qty_per_pack.get(facture_full_code)
-                                if qty_per_pack:
-                                    qty_total += 1
-                                    po_qty = item1.quantity
-                                    po_qty_unreadable = (po_qty == 0) or (po_qty == 1 and best_match.quantity > qty_per_pack)
-
-                                    if po_qty_unreadable:
-                                        reverse = best_match.quantity / qty_per_pack
-                                        if reverse == int(reverse):
-                                            inferred_qty = int(reverse)
-                                            qty_matched += 1
-                                            log.append(
-                                                f"    📦 PO qty unreadable (scanner crop) — inferred from facture: "
-                                                f"{best_match.quantity} units ÷ {qty_per_pack}/pqt = {inferred_qty} paquets ✅ whole number"
-                                            )
-                                        else:
-                                            log.append(
-                                                f"    📦 PO qty unreadable — reverse-calc not a whole number "
-                                                f"({best_match.quantity} ÷ {qty_per_pack} = {best_match.quantity / qty_per_pack:.2f}) "
-                                                f"⚠️ VERIFY MANUALLY"
-                                            )
-                                    else:
-                                        expected = po_qty * qty_per_pack
-                                        actual = best_match.quantity
-                                        qty_ok = abs(expected - actual) <= max(1, expected * 0.1)
-                                        if qty_ok:
-                                            qty_matched += 1
-                                        log.append(
-                                            f"    📦 Qty: {po_qty} paquets x {qty_per_pack}/pqt "
-                                            f"= {expected} expected | {actual} shipped "
-                                            f"→ {'✅ OK' if qty_ok else '❌ MISMATCH'}"
-                                        )
-                                else:
-                                    log.append(f"    📦 Qty: no price list entry for {facture_full_code} — skipped")
-                        else:
-                            log.append("    ⚠️ SCORE TOO LOW - NO MATCH")
+                        finish = {'NOIR', 'BLANC', 'BK', 'WH', 'NOIRES', 'ALUMINIUM'}
+                        kw2 = self.extract_keywords(item2.description)
+                        if kw1 & finish & kw2:
+                            score += 15
                     else:
-                        log.append("    ❌ NO MATCH")
+                        kw2 = self.extract_keywords(item2.description)
+                        dim1 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item1.description.upper()))
+                        dim2 = set(re.findall(r'\d+\s+\d+/\d+|\d+"', item2.description.upper()))
+                        if dim1 and dim2 and dim1 & dim2:
+                            score += 20
+                        finish = {'NOIR', 'BLANC', 'BK', 'WH', 'NOIRES', 'ALUMINIUM',
+                                'RECOUVREMENT', 'REVETEMENT', 'BALAI'}
+                        if kw1 & finish & kw2:
+                            score += 10
 
-                match_percentage = (matched / total_items * 100) if total_items > 0 else 0
-                if total_items <= 5:
-                    documents_match = matched >= (total_items - 1) and order_match
+                    if score > best_score:
+                        best_score = score
+                        best_match = item2
+
+                log.append("")
+                result_str = "✅ MATCH" if best_match and best_score >= 70 else "❌ NO MATCH"
+                sim_str    = f"(Score: {best_score}/100)"
+
+                if best_match:
+                    log.append(f"  {item1.product_code:<20}  →  {best_match.product_code:<20}  {sim_str:<18}  {result_str}")
+                    log.append(f"  PO Qty: {item1.quantity} paquets   |   Shipped: {best_match.quantity} units")
+
+                    if best_score >= 70:
+                        matched += 1
+                        if facture_mode and best_match.quantity > 0:
+                            facture_full_code = best_match.raw_code.upper() if best_match.raw_code else ""
+                            qty_per_pack = self.forimpex_qty_per_pack.get(facture_full_code)
+                            if qty_per_pack:
+                                qty_total += 1
+                                po_qty = item1.quantity
+                                po_qty_unreadable = (po_qty == 0) or (po_qty == 1 and best_match.quantity > qty_per_pack)
+
+                                if po_qty_unreadable:
+                                    reverse = best_match.quantity / qty_per_pack
+                                    if reverse == int(reverse):
+                                        inferred_qty = int(reverse)
+                                        qty_matched += 1
+                                        log.append(f"  📦 PO qty unreadable — inferred: {best_match.quantity} ÷ {qty_per_pack}/pqt = {inferred_qty} paquets  ✅")
+                                    else:
+                                        log.append(f"  📦 PO qty unreadable — reverse-calc not whole ({best_match.quantity} ÷ {qty_per_pack} = {best_match.quantity / qty_per_pack:.2f})  ⚠️ VERIFY MANUALLY")
+                                else:
+                                    expected = po_qty * qty_per_pack
+                                    actual   = best_match.quantity
+                                    qty_ok   = abs(expected - actual) <= max(1, expected * 0.1)
+                                    if qty_ok:
+                                        qty_matched += 1
+                                    log.append(f"  📦 {po_qty} paquets × {qty_per_pack}/pqt = {expected} expected  |  {actual} shipped  →  {'✅ OK' if qty_ok else '❌ MISMATCH'}")
+                            else:
+                                log.append(f"  📦 No price list entry for {facture_full_code} — qty check skipped")
                 else:
-                    documents_match = match_percentage >= 70 and (order_match or match_percentage >= 80)
+                    log.append(f"  {item1.product_code:<20}  →  no match found")
 
-            log.append(f"\n{'='*60}")
-            log.append(f"FINAL RESULT: {matched}/{total_items} items matched ({match_percentage:.1f}%)")
-            log.append(f"Order numbers: {'MATCH' if order_match else 'NO MATCH'}")
-            log.append(f"Documents Match: {documents_match}")
-            log.append(f"{'='*60}")
+            match_percentage = (matched / total_items * 100) if total_items > 0 else 0
+            if total_items <= 5:
+                documents_match = matched >= (total_items - 1) and order_match
+            else:
+                documents_match = match_percentage >= 70 and (order_match or match_percentage >= 80)
 
-            self.match_log = "\n".join(log)
-            print("\n" + self.match_log)
+        # ── FINAL RESULT ──────────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f"  {matched}/{total_items} items matched ({match_percentage:.1f}%)")
+        log.append(f"  Order numbers: {'✅ MATCH' if order_match else '❌ NO MATCH'}")
+        log.append(f"  Documents match: {'✅ YES' if documents_match else '❌ NO'}")
+        log.append("=" * 60)
 
-            return {
-                "match": documents_match,
-                "confidence": match_percentage,
-                "matched_items": matched,
-                "qty_matched": qty_matched,
-                "qty_total": qty_total,
-                "total_items": total_items,
-                "order1": doc1.order_number,
-                "order2": doc2.order_number,
-                "order_match": order_match,
-            }
+        # ── PRICE VERIFICATION ────────────────────────────────────────────
+        if facture_mode:
+            log.append("")
+            log.append("=" * 60)
+            log.append("PRICE VERIFICATION")
+            log.append("=" * 60)
+
+            price_list_path = r"G:\2026 PRICE LIST\ListePrix_FORIMPEX_LATEST.pdf"
+            catalog = {}
+            try:
+                with pdfplumber.open(price_list_path) as pdf:
+                    for page in pdf.pages:
+                        tables = page.extract_tables()
+                        for table in tables:
+                            for row in table:
+                                if not row or len(row) < 2:
+                                    continue
+                                code = str(row[0]).strip().upper()
+                                price_cell = row[-1]
+                                if not code.startswith('FX') or not price_cell:
+                                    continue
+                                try:
+                                    catalog[code] = float(
+                                        str(price_cell).replace(',', '.').replace('$', '').strip()
+                                    )
+                                except:
+                                    continue
+            except Exception as e:
+                log.append(f"  ⚠️  Could not load price list: {e}")
+
+            facture_doc = doc2 if doc2.doc_type == "FORIMPEX_FACTURE" else doc1
+            for item in facture_doc.line_items:
+                facture_price = item.unit_price
+                full_code     = item.raw_code.upper() if item.raw_code else ""
+
+                # 1. Exact match
+                catalog_price = catalog.get(full_code)
+
+                # 2. Strip trailing size suffix and match prefix
+                if not catalog_price:
+                    stripped = re.sub(r'-\d{3,4}$', '', full_code)
+                    if stripped:
+                        for cat_code, price in catalog.items():
+                            if cat_code.startswith(stripped):
+                                catalog_price = price
+                                break
+
+                # 3. Base number only — flag ambiguous
+                if not catalog_price:
+                    base = re.match(r'^(FX-\d+)', full_code)
+                    if base:
+                        matches = [(c, p) for c, p in catalog.items() if c.startswith(base.group(1))]
+                        if len(matches) == 1:
+                            catalog_price = matches[0][1]
+                        elif len(matches) > 1:
+                            log.append("")
+                            log.append(f"  {item.product_code:<20}  ⚠️  Ambiguous — {len(matches)} catalog entries match {base.group(1)}, manual review needed")
+                            continue
+
+                log.append("")
+                if catalog_price and facture_price > 0:
+                    diff   = abs(facture_price - catalog_price)
+                    # price difference threshold
+                    tol    = 0.50
+                    status = "✅ PASS" if diff <= tol else "❌ FAIL"
+                    log.append(f"  {item.product_code:<20}  Catalog: ${catalog_price:<10.2f}  Facture: ${facture_price:<10.2f}  Diff: ${diff:.2f}  {status}")
+                elif facture_price == 0:
+                    log.append(f"  {item.product_code:<20}  ⚠️  No price extracted from facture")
+                else:
+                    log.append(f"  {item.product_code:<20}  ❌  Not found in price list")
+
+        if facture_mode:
+            passed = sum(1 for item in facture_doc.line_items if item.unit_price > 0)
+            failed = sum(1 for item in facture_doc.line_items if item.unit_price > 0 and abs(item.unit_price - (catalog.get(item.raw_code.upper() 
+                            if item.raw_code else "", 0) or 0)) > 0.50)
+            price_check_ok = (failed / passed) < 0.5 if passed > 0 else None
+        else:
+            price_check_ok = None
+
+        self.match_log = "\n".join(log)
+        print("\n" + self.match_log)
+
+        return {
+            "match": documents_match,
+            "confidence": match_percentage,
+            "matched_items": matched,
+            "qty_matched": qty_matched,
+            "qty_total": qty_total,
+            "total_items": total_items,
+            "price_check_ok": price_check_ok,
+            "order1": doc1.order_number,
+            "order2": doc2.order_number,
+            "order_match": order_match,
+        }
 
     
     def display_result(self, result):

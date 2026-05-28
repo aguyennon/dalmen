@@ -8,6 +8,8 @@ TO BE CONTINUED LATER
 REMOVE DEBUG LINE 281
 """
 
+# The only supplier on the hub, alongside DECKO, with custom logic for the Facture part
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, scrolledtext
 import pdfplumber
@@ -21,7 +23,6 @@ from pdf2image import convert_from_path
 import pytesseract
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
 
 @dataclass
 class LineItem:
@@ -232,6 +233,7 @@ class DocumentMatcherGUI:
                         line_items=facture_items,
                         total=0.0
                     )
+                    doc2.is_facture = True
                 else:
                     print(f" CUST-ORDER {doc1.po_number} not found in facture")
                     print(f" Available CUST-ORDERs: {list(facture_groups.keys())}")
@@ -240,6 +242,7 @@ class DocumentMatcherGUI:
                         line_items=[],
                         total=0.0
                     )
+                    doc2.is_facture = False
 
             elif 'CONFIRMATION' in text2.upper() or 'ENTRY' in text2.upper():
                 doc2 = self.parse_confirmation(text2)
@@ -260,6 +263,7 @@ class DocumentMatcherGUI:
             print(traceback.format_exc())
             error_details = traceback.format_exc()
             self.root.after(0, self.display_error, f"{str(e)}\n\n{error_details}")
+
 
     def extract_pdf_text(self, pdf_path: str) -> str:
         text = ""
@@ -420,11 +424,10 @@ class DocumentMatcherGUI:
 
         print(f"DEBUG: Total items: {len(items)}\n")
 
-        return OrderDocument(
-            po_number=po_number,
-            line_items=items,
-            total=0.0
-        )
+        doc = OrderDocument(po_number=po_number, line_items=items, total=0.0)
+        doc.is_facture = False
+        return doc
+
 
     def parse_facture_by_custorder(self, text: str) -> Dict[str, List[LineItem]]:
         lines = text.split('\n')
@@ -470,9 +473,9 @@ class DocumentMatcherGUI:
                 suffix_match = re.match(r'^[A-Z]{0,2}\d+[\-\_](\d+)', full_code, re.IGNORECASE)
                 suffix = suffix_match.group(1) if suffix_match else ""
 
-                price_unit_match = re.search(r'([\d]+\.[\d]{4})\s+(MPI|MPR|UNT|MPC)\s+', line)
+                price_unit_match = re.search(r'([\d]+\s*\.[\d]{4})\s+(MPI|MPR|UNT|MPC)\s+', line)
                 if price_unit_match:
-                    unit_price = float(price_unit_match.group(1))
+                    unit_price = float(price_unit_match.group(1).replace(' ', ''))
                     unit = price_unit_match.group(2)
                 else:
                     unit_price = 0.0
@@ -498,7 +501,7 @@ class DocumentMatcherGUI:
         import pandas as pd
         self.load_thermoplast_price_list = {}
         try:
-            df = pd.read_excel(r"G:\2026 PRICE LIST\DALMEN PRIX 2 AVRIL 2026 - THERMOPLAST.xlsx",
+            df = pd.read_excel(r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\DALMEN PRIX 2 AVRIL 2026 - THERMOPLAST.xlsx",
             sheet_name="Feuil1",
             usecols="C,F",
             header=0)
@@ -530,125 +533,141 @@ class DocumentMatcherGUI:
 
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
         log = []
-        log.append("="*60)
-        log.append("DALMEN MATCHER RESULTS")
-        log.append("="*60)
-
-        if len(doc1.line_items) == 0 or len(doc2.line_items) == 0:
-            log.append("\n ERROR: One or both documents have no items!")
-            log.append(f"Doc1 items: {len(doc1.line_items)}")
-            log.append(f"Doc2 items: {len(doc2.line_items)}")
-
-        log.append(f"\n[PO NUMBERS]")
-        log.append(f" Doc1: {doc1.po_number}")
-        log.append(f" Doc2: {doc2.po_number}")
 
         po_match = doc1.po_number == doc2.po_number
-        if po_match:
-            log.append(" PO NUMBER MATCH: YES")
-        else:
-            log.append(" PO NUMBER MATCH: NO")
 
-        log.append(f"\n{'='*60}")
-        log.append("DOC1 ITEMS:")
-        log.append(f"{'='*60}")
-        for item in doc1.line_items:
-            log.append(f" {item.item_code} | Qty: {item.quantity}")
+        # ── SUMMARY ───────────────────────────────────────────────────────
+        log.append("=" * 60)
+        log.append("SUMMARY")
+        log.append("=" * 60)
 
-        log.append(f"\n{'='*60}")
-        log.append("DOC2 ITEMS:")
-        log.append(f"{'='*60}")
-        for item in doc2.line_items:
-            log.append(f" {item.item_code} | Qty: {item.quantity}")
+        col_width = 38
+        log.append(f"{'Doc1 — ' + str(len(doc1.line_items)) + ' items':<{col_width}}  {'Doc2 — ' + str(len(doc2.line_items)) + ' items'}")
+        log.append("-" * 60)
 
-        log.append(f"\n{'='*60}")
-        log.append("MATCHING PROCESS:")
-        log.append(f"{'='*60}")
+        for i in range(max(len(doc1.line_items), len(doc2.line_items))):
+            left  = f"  {doc1.line_items[i].item_code} | Qty: {doc1.line_items[i].quantity}" if i < len(doc1.line_items) else ""
+            right = f"  {doc2.line_items[i].item_code} | Qty: {doc2.line_items[i].quantity}" if i < len(doc2.line_items) else ""
+            log.append(f"{left:<{col_width}}  {right}")
 
-        matched = 0
-        total_items = len(doc2.line_items)
-        used_matches = set()
+        log.append("")
+        po_str = "✅ MATCH" if po_match else "❌ NO MATCH"
+        log.append(f"  PO Numbers — Doc1: {doc1.po_number}  |  Doc2: {doc2.po_number}  →  {po_str}")
+
+        if len(doc1.line_items) == 0 or len(doc2.line_items) == 0:
+            log.append("")
+            if len(doc1.line_items) == 0:
+                log.append("  ⚠️  No items found in Doc1")
+            if len(doc2.line_items) == 0:
+                log.append("  ⚠️  No items found in Doc2")
+
+        # ── MATCHING PROCESS ──────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("MATCHING PROCESS")
+        log.append("=" * 60)
+
+        matched       = 0
+        total_items   = len(doc2.line_items)
+        used_matches  = set()
         price_check_ok = True
+        any_price_checked = False
 
         for item1 in doc1.line_items:
             best_match = None
             best_score = 0
-            best_idx = -1
+            best_idx   = -1
 
             for idx, item2 in enumerate(doc2.line_items):
                 if idx in used_matches:
                     continue
-
                 score = 0
-
                 if item1.item_code == item2.item_code:
                     score += 60
-                elif item1.item_code.lstrip('ABCDEFGHIJKLMNOPQRSTUVWXYZ') == item2.item_code.lstrip('ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
+                elif item1.item_code.lstrip('ABCDEFGHIJKLMNOPQRSTUVWXYZ') == \
+                    item2.item_code.lstrip('ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
                     score += 55
                 else:
                     code_sim = self.calculate_similarity(item1.item_code, item2.item_code)
                     if code_sim > 0.75:
                         score += 50
-
                 if item1.quantity > 0 and item2.quantity > 0:
                     if abs(item1.quantity - item2.quantity) < 1:
                         score += 10
-
                 if score > best_score:
                     best_score = score
                     best_match = item2
-                    best_idx = idx
+                    best_idx   = idx
 
-            log.append(f"\n{item1.item_code} | Qty: {item1.quantity}")
+            log.append("")
+            result_str = "✅ MATCH" if best_match and best_score >= 50 else "❌ NO MATCH"
+            sim_str    = f"(Score: {best_score}/80)"
 
             if best_match and best_score >= 50:
-                used_matches.add(best_idx) 
-                log.append(f"  Best Match: {best_match.item_code} | Qty: {best_match.quantity}")
-                log.append(f"  → Best match: {best_match.item_code}")
-                log.append(f"     Score: {best_score}/80")
+                used_matches.add(best_idx)
+                log.append(f"  {item1.item_code:<20}  →  {best_match.item_code:<20}  {sim_str:<16}  {result_str}")
 
                 facture_price = best_match.unit_price
                 if facture_price > 0 and best_match.unit:
                     suffix_match = re.search(r'-(\d+)$', best_match.raw_code)
-                    suffix = suffix_match.group(1) if suffix_match else ""
-
-                    list_price = self.lookup_thermoplast_price(
-                        item1.item_code,
-                        suffix=suffix,
-                        unit=best_match.unit
-                    )
+                    suffix       = suffix_match.group(1) if suffix_match else ""
+                    list_price   = self.lookup_thermoplast_price(
+                        item1.item_code, suffix=suffix, unit=best_match.unit)
                     if list_price is not None:
+                        any_price_checked = True
                         diff = abs(facture_price - list_price)
                         price_ok = diff <= 200
-                        if not price_ok:
+                        if not any_price_checked:
+                            price_check_ok = True
+                        elif not price_ok:
                             price_check_ok = False
-                        log.append(f" Price: Facture ${facture_price:.4f} | List ${list_price:.4f} | Diff ${diff:.2f} → {'✅' if price_ok else '❌'}")
+                        status = "✅" if price_ok else "❌"
+                        log.append(f"  💲 Facture: ${facture_price:.4f}  |  List: ${list_price:.4f}  |  Diff: ${diff:.2f}  {status}")
                     else:
-                        log.append(f" Price: Facture ${facture_price:.4f} | ⚠️ Not found in price list")
-                log.append("  ✅ MATCHED")
+                        log.append(f"  💲 Facture: ${facture_price:.4f}  |  ⚠️  Not found in price list")
                 matched += 1
             else:
-                log.append("  ❌ No match found")
+                log.append(f"  {item1.item_code:<20}  →  no match found")
 
-        facture_item_count = len(doc2.line_items)
-        if facture_item_count > 0:
-            match_percentage = (matched / facture_item_count * 100)
-        else:
-            match_percentage = 0
+        # ── FINAL RESULT ──────────────────────────────────────────────────
+        match_percentage = (matched / total_items * 100) if total_items > 0 else 0
+        documents_match  = match_percentage >= 70 and po_match
 
-        documents_match = match_percentage >= 70 and po_match
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f"  {matched}/{total_items} items matched ({match_percentage:.1f}%)")
+        log.append(f"  PO Match:        {'✅ YES' if po_match else '❌ NO'}")
+        log.append(f"  Price Check:     {'✅ PASS' if price_check_ok else '❌ FAIL'}")
+        log.append(f"  Documents match: {'✅ YES' if documents_match else '❌ NO'}")
+        log.append("=" * 60)
 
-        # From Claude
-        log.append("\n" + "="*60)
-        log.append("SUMMARY")
-        log.append("="*60)
-        log.append(f"  Facture items: {len(doc2.line_items)}")
-        log.append(f"  Found in order: {matched}/{len(doc2.line_items)}")
-        log.append(f"  Match percentage: {match_percentage:.1f}%")
-        log.append(f"  Threshold: 90%")
-        log.append(f"  PO Match: {'✅ YES' if po_match else '❌ NO'}")
-        log.append(f"  Result: {'✅ DOCUMENTS MATCH' if documents_match else '❌ DO NOT MATCH'}")
-        log.append("="*60)
+        # ── PRICE VERIFICATION ────────────────────────────────────────────
+        is_facture = getattr(doc2, 'is_facture', False)
+
+        if is_facture:
+            log.append("")
+            log.append("=" * 60)
+            log.append("PRICE VERIFICATION")
+            log.append("=" * 60)
+
+        for item1 in doc1.line_items:
+            for item2 in doc2.line_items:
+                if item1.item_code == item2.item_code or self.calculate_similarity(item1.item_code, item2.item_code) > 0.75:
+                    facture_price = item2.unit_price
+                    if facture_price > 0 and item2.unit:
+                        suffix_match = re.search(r'-(\d+)$', item2.raw_code)
+                        suffix = suffix_match.group(1) if suffix_match else ""
+                        list_price = self.lookup_thermoplast_price(item1.item_code, suffix=suffix, unit=item2.unit)
+                        log.append("")
+                        if list_price is not None:
+                            diff = abs(facture_price - list_price)
+                            status = "✅ PASS" if diff <= 100 else "❌ FAIL"
+                            log.append(f" {item2.item_code:<20} Facture: ${facture_price:<10.4f}  List: ${list_price:<10.4f}  Diff: ${diff:.2f}  {status}")
+                        else:
+                            log.append(f"  {item2.item_code:<20}  Facture: ${facture_price:.4f}  ⚠️  Not found in price list")
+                    break
 
         self.match_log = "\n".join(log)
         print("\n" + self.match_log)
@@ -661,6 +680,9 @@ class DocumentMatcherGUI:
             "po1": doc1.po_number,
             "po2": doc2.po_number,
             "price_check_ok": price_check_ok,
+            "is_confirmation": 'CONFIRMATION' in
+                self.extract_pdf_text(self.file2_path).upper() or
+                'ENTRY' in self.extract_pdf_text(self.file2_path).upper(),
         }
 
     # ── UI DISPLAY ────────────────────────────────────────────────────────────

@@ -5,6 +5,8 @@ FIXED VERSION - Improved DECKO/Dalmen matching
 ** MAY NEED TO FIX COLOURS **
 """
 
+# The only supplier on the hub, alongside THERMOPLAST, with custom logic for the Facture part
+
 from email.mime import text
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -271,7 +273,7 @@ class DocumentMatcherGUI:
         import pandas as pd
         try:
             df = pd.read_excel(
-                r"G:\2026 PRICE LIST\DECKO - PRODUITS DALMEN LTÉE.xlsx",
+                r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\DECKO - PRODUITS DALMEN LTÉE.xlsx",
                 sheet_name="Liste de prix",
                 header=None
             )
@@ -1420,10 +1422,14 @@ class DocumentMatcherGUI:
                 print(f" Page {i} DOES contain PO {target_po}")
                 matching_text.append(page_text)
             else:
-                po_base = '-'.join(target_po.split('-')[:3])
-                if po_base in page_text and len(po_base) >= 10:
-                    print(f" Page {i} DOES contain PO base {po_base}")
-                    matching_text.append(page_text)
+                po_parts = target_po.split('-')
+                for length in [5, 4, 3]:
+                    if len(po_parts) >= length:
+                        po_base = '-'.join(po_parts[:length])
+                        if po_base in page_text and len(po_base) >= 8:
+                            print(f" Page {i} DOES contain PO base {po_base}")
+                            matching_text.append(page_text)
+                            break
         
         if not matching_text:
             print(f"   WARNING: No pages found with PO {target_po}")

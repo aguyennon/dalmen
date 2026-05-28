@@ -521,7 +521,7 @@ class DocumentMatcherGUI:
         self.viscan_prices = {}
         try:
             df = pd.read_excel(
-                r"G:\2026 PRICE LIST\VISCAN - Accumulated LIST.xlsx",
+                r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\VISCAN - Accumulated LIST.xlsx",
                 sheet_name="Sheet1",
                 usecols="E,I",
                 header=0
@@ -678,53 +678,56 @@ class DocumentMatcherGUI:
                 agg[key]["specs"] = getattr(i, 'specs', None)  # Store specs from first item
         return agg
 
+
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
         log = []
-        log.append("="*60)
-        log.append("MATCHING ANALYSIS")
-        log.append("="*60)
-        
+
         agg1 = self.aggregate(doc1.line_items)
         agg2 = self.aggregate(doc2.line_items)
-        
-        log.append(f"\nDoc1 aggregated items: {len(agg1)}")
-        for key, data in agg1.items():
-            log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
-        
-        log.append(f"\nDoc2 aggregated items: {len(agg2)}")
-        for key, data in agg2.items():
-            log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
+        is_confirmation = not any(item.unit_price > 0 for item in doc2.line_items)
 
-        matched = 0
+        # ── SUMMARY ───────────────────────────────────────────────────────
+        log.append("=" * 60)
+        log.append("SUMMARY")
+        log.append("=" * 60)
+
+        col_width = 38
+        log.append(f"{'Doc1 — ' + str(len(agg1)) + ' items':<{col_width}}  {'Doc2 — ' + str(len(agg2)) + ' items'}")
+        log.append("-" * 60)
+
+        keys1 = list(agg1.items())
+        keys2 = list(agg2.items())
+        for i in range(max(len(keys1), len(keys2))):
+            left  = f"  {keys1[i][1]['label']}: ${keys1[i][1]['total']:.2f}" if i < len(keys1) else ""
+            right = f"  {keys2[i][1]['label']}: ${keys2[i][1]['total']:.2f}" if i < len(keys2) else ""
+            log.append(f"{left:<{col_width}}  {right}")
+
+        # ── MATCHING PROCESS ──────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("MATCHING PROCESS")
+        log.append("=" * 60)
+
+        matched            = 0
         price_check_result = {}
 
-        log.append("\n" + "-"*60)
-        log.append("MATCHING PROCESS:")
-        log.append("-"*60)
-
         for key1, data1 in agg1.items():
-            total1 = data1["total"]
-            label1 = data1["label"]
-            best_match = None
+            total1          = data1["total"]
+            label1          = data1["label"]
+            best_match      = None
             best_match_data = {}
-            best_diff = float("inf")
-            best_sim = 0
+            best_diff       = float("inf")
+            best_sim        = 0
 
             for key2, data2 in agg2.items():
                 total2 = data2["total"]
                 label2 = data2["label"]
 
-                if key1 == key2:
-                    sim = 1.0
-                else:
-                    sim = self.calculate_similarity(
-                        self.normalize_code(label1),
-                        self.normalize_code(label2)
-                    )
+                sim = 1.0 if key1 == key2 else self.calculate_similarity(
+                    self.normalize_code(label1), self.normalize_code(label2))
 
                 specs1 = data1.get("specs")
                 specs2 = data2.get("specs")
-
                 if specs1 and specs2:
                     if specs1.get('size') == specs2.get('size'):
                         sim += 0.1
@@ -735,75 +738,112 @@ class DocumentMatcherGUI:
 
                 if total1 == 0 or total2 == 0:
                     if sim > best_sim:
-                        best_match = label2
+                        best_match      = label2
                         best_match_data = data2
-                        best_diff = 0
-                        best_sim = sim
+                        best_diff       = 0
+                        best_sim        = sim
                 else:
                     if sim > 0.60 and diff < best_diff:
-                        best_match = label2
+                        best_match      = label2
                         best_match_data = data2
-                        best_diff = diff
-                        best_sim = sim
+                        best_diff       = diff
+                        best_sim        = sim
 
-            if total1 == 0 or (best_match and best_match_data.get("total", 0) == 0):
-                threshold = 0
-            else:
-                threshold = max(5.0, total1 * 0.10)
-
+            threshold    = 0 if (total1 == 0 or (best_match and best_match_data.get("total", 0) == 0)) \
+                        else max(5.0, total1 * 0.10)
             matched_this = best_match and (best_diff <= threshold or threshold == 0)
 
-            log.append(f"\n{label1} (${total1:.2f})")
-            if best_match:
-                log.append(f"  Best match: {best_match} (${total1-best_diff:.2f})")
-                log.append(f"  Similarity: {best_sim:.1%}, Diff: ${best_diff:.2f}, Threshold: ${threshold:.2f}")
+            facture_unit_price = best_match_data.get("unit_price", 0) if best_match else 0
 
-                if data1.get("specs") and best_match_data.get("specs"):
-                    s1 = data1["specs"]
-                    s2 = best_match_data["specs"]
-                    if s1.get('size') == s2.get('size'):
-                        log.append(f"  ✅ Size match: {s1.get('size')}")
-                    if s1.get('head') == s2.get('head'):
-                        log.append(f"  ✅ Head match: {s1.get('head')}")
-
-                # Price list check
-                facture_unit_price = best_match_data.get("unit_price", 0)
-                if key1 in self.viscan_prices:
+            # Price check only for factures
+            if not is_confirmation and best_match:
+                if key1 in self.viscan_prices and facture_unit_price > 0:
                     expected_price = self.viscan_prices[key1]
-                    price_match = abs(expected_price - facture_unit_price) < 0.01
-                    log.append(f"  💲 Price check: list ${expected_price:.4f} | facture ${facture_unit_price:.4f} → {'✅ MATCH' if price_match else '❌ MISMATCH'}")
+                    price_match    = abs(expected_price - facture_unit_price) < 0.01
                     if not price_match:
                         matched_this = False
                     price_check_result = {
-                        "code": key1,
-                        "list_price": expected_price,
-                        "facture_price": facture_unit_price,
-                        "match": price_match
+                        "code": key1, "list_price": expected_price,
+                        "facture_price": facture_unit_price, "match": price_match
+                    }
+                elif key1 in self.viscan_prices and facture_unit_price == 0:
+                    price_check_result = {
+                        "code": key1, "list_price": self.viscan_prices[key1],
+                        "facture_price": 0.0, "match": None
                     }
                 elif facture_unit_price > 0:
-                    log.append(f"  💲 Facture price: ${facture_unit_price:.4f} (not in price list)")
                     price_check_result = {
-                        "code": key1,
-                        "list_price": 0.0,
-                        "facture_price": facture_unit_price,
-                        "match": False
+                        "code": key1, "list_price": 0.0,
+                        "facture_price": facture_unit_price, "match": False
                     }
 
-                log.append(f"  Result: {'✓ MATCH' if matched_this else '✗ NO MATCH'}")
+            log.append("")
+            result_str = "✅ MATCH" if matched_this else "❌ NO MATCH"
+            sim_str    = f"(Similarity: {best_sim:.0%})"
+
+            if best_match:
+                log.append(f"  {label1:<20}  →  {best_match:<20}  {sim_str:<20}  {result_str}")
+                log.append(f"  $ Price:  PO ${total1:<10.2f}  |  Facture ${total1 - best_diff:<10.2f}  |  Diff: ${best_diff:.2f}")
+
+                if data1.get("specs") and best_match_data.get("specs"):
+                    s1, s2 = data1["specs"], best_match_data["specs"]
+                    if s1.get('size') == s2.get('size'):
+                        log.append(f"  ✅ Size: {s1.get('size')}")
+                    if s1.get('head') == s2.get('head'):
+                        log.append(f"  ✅ Head: {s1.get('head')}")
+
+                if not is_confirmation:
+                    if key1 in self.viscan_prices and facture_unit_price > 0:
+                        expected_price = self.viscan_prices[key1]
+                        price_match    = abs(expected_price - facture_unit_price) < 0.01
+                        log.append(f"  💲 List: ${expected_price:.4f}  |  Facture: ${facture_unit_price:.4f}  →  {'✅ MATCH' if price_match else '❌ MISMATCH'}")
+                    elif facture_unit_price > 0:
+                        log.append(f"  💲 Facture: ${facture_unit_price:.4f}  —  not in price list")
             else:
-                log.append(f"  No match found")
+                log.append(f"  {label1:<20}  →  no match found")
 
             if matched_this:
                 matched += 1
 
-        total_items = len(agg2)
+        # ── FINAL RESULT ──────────────────────────────────────────────────
+        total_items      = len(agg2)
         match_percentage = (matched / total_items * 100) if total_items > 0 else 0
-        documents_match = match_percentage >= 70
+        documents_match  = match_percentage >= 70
 
-        log.append("\n" + "="*60)
-        log.append(f"FINAL RESULT: {matched}/{total_items} items matched ({match_percentage:.1f}%)")
-        log.append(f"Documents match: {documents_match}")
-        log.append("="*60)
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f"  {matched}/{total_items} items matched ({match_percentage:.1f}%)")
+        log.append(f"  Documents match: {'✅ YES' if documents_match else '❌ NO'}")
+        log.append("=" * 60)
+
+        # ── PRICE VERIFICATION ────────────────────────────────────────────
+        if not is_confirmation:
+            log.append("")
+            log.append("=" * 60)
+            log.append("PRICE VERIFICATION")
+            log.append("=" * 60)
+
+            for key1, data1 in agg1.items():
+                facture_unit_price = 0
+                for key2, data2 in agg2.items():
+                    if key1 == key2 or self.calculate_similarity(
+                            self.normalize_code(data1['label']),
+                            self.normalize_code(data2['label'])) > 0.60:
+                        facture_unit_price = data2.get("unit_price", 0)
+                        break
+
+                log.append("")
+                if key1 in self.viscan_prices and facture_unit_price > 0:
+                    expected = self.viscan_prices[key1]
+                    diff     = abs(facture_unit_price - expected)
+                    status   = "✅ PASS" if diff < 0.01 else "❌ FAIL"
+                    log.append(f"  {data1['label']:<20}  List: ${expected:<10.4f}  Facture: ${facture_unit_price:<10.4f}  Diff: ${diff:.4f}  {status}")
+                elif facture_unit_price == 0:
+                    log.append(f"  {data1['label']:<20}  ⚠️  No facture price found")
+                else:
+                    log.append(f"  {data1['label']:<20}  ❌  Not in price list  (Facture: ${facture_unit_price:.4f})")
 
         self.match_log = "\n".join(log)
         print("\n" + self.match_log)
@@ -814,12 +854,14 @@ class DocumentMatcherGUI:
             "matched_items": matched,
             "total_items": total_items,
             "order1": doc1.order_number,
-            "order2": doc1.order_number,  # use doc1 PO# for both since facture OCR misses it
+            "order2": doc1.order_number,
             "total1": doc1.total,
             "total2": doc2.total,
             "total_diff": abs(doc1.total - doc2.total),
-            "price_check": price_check_result
+            "price_check": price_check_result,
+            "is_confirmation": is_confirmation,
         }
+
     
     def display_result(self, result):
         self.progress.stop()

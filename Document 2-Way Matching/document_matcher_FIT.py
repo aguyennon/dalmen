@@ -384,25 +384,43 @@ class DocumentMatcherGUI:
                 product_code = match.group(1).strip()
 
                 unit_price = 0.0
-                for j in range(i, min(i + 5, len(lines))):
-                    price_match = re.search(r'(\d+[,\.]\d{2,})', lines[j])
-                    if price_match:
-                        price_str = price_match.group(1).replace(',', '.')
+                total = 0.0
+
+                # Look for pattern: QTY UNIT_PRICE HST... TOTAL CAD
+                for j in range(i, min(i + 20, len(lines))):
+                    # Pattern: number  number  HST...  number CAD
+                    price_line = re.search(
+                        r'(\d+)\s+([\d,]+)\s+HST\S*\s+([\d\s,]+)\s+CAD',
+                        lines[j]
+                    )
+                    if price_line:
                         try:
-                            unit_price = float(price_str)
-                            if unit_price > 0.01:
-                                break
+                            unit_price = float(price_line.group(2).replace(',', '.'))
+                            total_str  = price_line.group(3).replace(' ', '').replace(',', '.')
+                            total      = float(total_str)
+                            break
                         except:
                             pass
 
-                print(f" Found [Receipt]: {product_code}, Unit Price: ${unit_price:.2f}")
+                    # Fallback: just grab CAD amount
+                    if not total:
+                        cad_match = re.search(r'([\d\s,\.]+)\s+CAD', lines[j])
+                        if cad_match:
+                            try:
+                                val = float(cad_match.group(1).replace(' ', '').replace(',', '.'))
+                                if val > 1:
+                                    total = val
+                            except:
+                                pass
+
+                print(f"  Found [Receipt]: {product_code}, Unit: ${unit_price:.3f}, Total: ${total:.2f}")
                 items.append(LineItem(
                     product_code=product_code,
                     quantity=1.0,
                     unit_price=unit_price,
-                    total=0.0
+                    total=total,
                 ))
-                
+
         print(f"DEBUG: Total items extracted from receipt: {len(items)}\n")
         return items
 
@@ -490,140 +508,135 @@ class DocumentMatcherGUI:
 
 
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
-        """Match two documents"""
         log = []
-        log.append("="*60)
-        log.append("MATCHING ANALYSIS")
-        log.append("="*60)
-        
+
+        order_match = doc1.order_number == doc2.order_number
+        if not order_match:
+            self.match_log = f"❌ Order numbers do not match ({doc1.order_number} vs {doc2.order_number}) — documents rejected."
+            return {
+                "match": False, "confidence": 0,
+                "matched_items": 0, "total_items": 0,
+                "order1": doc1.order_number, "order2": doc2.order_number,
+                "total1": doc1.total, "total2": doc2.total,
+                "total_diff": 0, "price_check_ok": None,
+            }
+
         agg1 = self.aggregate(doc1.line_items)
         agg2 = self.aggregate(doc2.line_items)
-        
-        log.append(f"\nDoc1 aggregated items: {len(agg1)}")
-        for key, data in agg1.items():
-            log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
-        
-        log.append(f"\nDoc2 aggregated items: {len(agg2)}")
-        for key, data in agg2.items():
-            log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
+
+        # ── SUMMARY ───────────────────────────────────────────────────────
+        log.append("=" * 60)
+        log.append("SUMMARY")
+        log.append("=" * 60)
+
+        col_width = 38
+        log.append(f"{'Doc1 — ' + str(len(agg1)) + ' items':<{col_width}}  {'Doc2 — ' + str(len(agg2)) + ' items'}")
+        log.append("-" * 60)
+
+        keys1 = list(agg1.items())
+        keys2 = list(agg2.items())
+        for i in range(max(len(keys1), len(keys2))):
+            left  = f"  {keys1[i][1]['label']}: ${keys1[i][1]['total']:.2f}" if i < len(keys1) else ""
+            right = f"  {keys2[i][1]['label']}: ${keys2[i][1]['total']:.2f}" if i < len(keys2) else ""
+            log.append(f"{left:<{col_width}}  {right}")
+
+        # ── MATCHING PROCESS ──────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("MATCHING PROCESS")
+        log.append("=" * 60)
 
         matched = 0
-
-        log.append("\n" + "-"*60)
-        log.append("MATCHING PROCESS:")
-        log.append("-"*60)
 
         for key1, data1 in agg1.items():
             total1 = data1["total"]
             label1 = data1["label"]
             best_match = None
-            best_diff = float("inf")
-            best_sim = 0
+            best_diff  = float("inf")
+            best_sim   = 0
 
             for key2, data2 in agg2.items():
-                total2 = data2["total"]
                 label2 = data2["label"]
-
                 sim = self.calculate_similarity(
                     self.normalize_code(label1),
-                    self.normalize_code(label2)
-                )
+                    self.normalize_code(label2))
+                if sim > best_sim:
+                    best_match = label2
+                    best_diff  = 0
+                    best_sim   = sim
 
-                if total1 == 0 or total2 == 0:
-                    if sim > 0.60:
-                        best_match = label2
-                        best_diff = 0
-                        best_sim = sim
-                else:
-                    diff = abs(total1 - total2)
-                    if sim > 0.60 and diff < best_diff:
-                        best_match = label2
-                        best_diff = diff
-                        best_sim = sim
-            
-            if total1 == 0 or total2 == 0:
-                threshold = 0.0
-                matched_this = best_match and best_sim > 0.60
-            else:
-                threshold = max(5.0, total1 * 0.10)
-                matched_this = best_match and best_diff < threshold
+            log.append("")
+            matched_this = best_match and best_sim > 0.60
+            result_str   = "✅ MATCH" if matched_this else "❌ NO MATCH"
+            sim_str      = f"(Similarity: {best_sim:.0%})"
 
-            log.append(f"\n{label1} (${total1:.2f})")
             if best_match:
-                log.append(f"  Best match: {best_match} (${total1-best_diff:.2f})")
-                log.append(f"  Similarity: {best_sim:.1%}, Diff: ${best_diff:.2f}, Threshold: ${threshold:.2f}")
-                log.append(f"  Result: {'✓ MATCH' if matched_this else '✗ NO MATCH'}")
+                log.append(f"  {label1:<20}  →  {best_match:<20}  {sim_str:<20}  {result_str}")
             else:
-                log.append(f"  No match found")
-            
+                log.append(f"  {label1:<20}  →  no match found")
+
             if matched_this:
                 matched += 1
-        
-        total_items = max(len(agg1), len(agg2))
+
+        # ── FINAL RESULT ──────────────────────────────────────────────────
+        total_items      = max(len(agg1), len(agg2))
         match_percentage = (matched / total_items * 100) if total_items > 0 else 0
-        documents_match = match_percentage >= 70
-        
-        log.append("\n" + "="*60)
-        log.append(f"FINAL RESULT: {matched}/{total_items} items matched ({match_percentage:.1f}%)")
-        log.append(f"Documents match: {documents_match}")
-        log.append("="*60)
-        
-        catalog = self.load_price_catalog()
+        documents_match  = match_percentage >= 70
+
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f"  {matched}/{total_items} items matched ({match_percentage:.1f}%)")
+        log.append(f"  Documents match: {'✅ YES' if documents_match else '❌ NO'}")
+        log.append("=" * 60)
+
+        # ── PRICE VERIFICATION ────────────────────────────────────────────
+        is_facture = 'Facture' in self.extract_text_from_pdf(self.file2_path) or \
+                    'FACTURE' in self.extract_text_from_pdf(self.file2_path)
+        catalog = self.load_price_catalog() if is_facture else {}
+        price_discrepancies = []
 
         if catalog:
-            log.append("\n" + "="*60)
+            log.append("")
+            log.append("=" * 60)
             log.append("PRICE VERIFICATION")
-            log.append("="*60)
-
-            price_discrepancies = []
+            log.append("=" * 60)
 
             for item in doc2.line_items:
-                full_code = item.product_code
-                base_code = full_code.split()[0]
+                full_code  = item.product_code
+                base_code  = full_code.split()[0]
                 facture_price = item.unit_price
 
                 catalog_price = None
                 if full_code in catalog:
                     catalog_price = catalog[full_code]
-                    matched_code = full_code
                 elif base_code in catalog:
                     catalog_price = catalog[base_code]
-                    matched_code = full_code
-            
                 else:
                     for cat_code, price in catalog.items():
                         if cat_code.startswith(base_code):
                             catalog_price = price
-                            matched_code = cat_code
                             break
 
-
+                log.append("")
                 if catalog_price is not None:
                     diff = abs(facture_price - catalog_price)
-
-                    log.append(f"\n{full_code}")
-                    log.append(f"  Facture: ${facture_price:.3f}")
-                    log.append(f"  Catalog: ${catalog_price:.3f}")
-                    log.append(f"  Diff: ${diff:.3f}")    
-
-                    if diff > 0.5:  # threshold / difference both prices can have
-                        log.append(f" PRICE MISMATCH!!")
+                    tol = catalog_price * 0.05
+                    status = "✅ PRICE OK" if diff <= tol else "❌ PRICE MISMATCH"
+                    log.append(f"  {full_code:<20}  Facture: ${facture_price:<10.3f}  Catalog: ${catalog_price:<10.3f}  Diff: ${diff:.3f}  {status}")
+                    if diff > 0.5:
                         price_discrepancies.append({
-                            'code': full_code,
-                            'facture': facture_price,
-                            'catalog': catalog_price,
-                            'diff': diff
-                        })
-                    else:
-                        log.append(f" ✅ PRICE OK :)")
+                            'code': full_code, 'facture': facture_price,
+                            'catalog': catalog_price, 'diff': diff})
                 else:
-                    log.append(f"\n{full_code}")
-                    log.append(f"  ❌ Not found in catalog")
-            
+                    log.append(f"  {full_code:<20}  ❌ Not found in catalog")
+
+            log.append("")
             if price_discrepancies:
-                log.append(f"\n Found {len(price_discrepancies)} price discrepancies!")
+                log.append(f"  ⚠️  {len(price_discrepancies)} price discrepancy(s) found")
             else:
-                log.append(f"\n✅ All prices verified! :)")
+                log.append("  ✅ All prices verified!")
 
         self.match_log = "\n".join(log)
         print("\n" + self.match_log)
@@ -637,14 +650,15 @@ class DocumentMatcherGUI:
             "order2": doc2.order_number,
             "total1": doc1.total,
             "total2": doc2.total,
-            "total_diff": abs(doc1.total - doc2.total)
+            "total_diff": abs(doc1.total - doc2.total),
+            "price_check_ok": len(price_discrepancies) == 0 if catalog else None,
         }
 
 
     # ── FUNCTIONALITY FOR PRICING ───────────────────────────────────────────────────────
     def load_price_catalog(self) -> Dict[str, float]:
         try:
-            excel_path = r"G:\2026 PRICE LIST\FIT  2026-03-13.xls"
+            excel_path = r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\FIT  2026-03-13.xls"
             df = pd.read_excel(excel_path, sheet_name='SO08469', header=0)
 
             catalog = {}

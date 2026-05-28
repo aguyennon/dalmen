@@ -156,7 +156,7 @@ class DocumentMatcherGUI:
                 continue
             
             # Pattern: QUANTITY ITEM_CODE U/M DESCRIPTION UNIT_PRICE $TOTAL
-            pattern = r'^(\d+)\s+(TH\d+)\s+\w+\s+(.+?)\s+([\d.]+)\s+\$?([\d,]+\.?\d*)$'
+            pattern = r'^(\d+)\s+(?:\w+\s+)?(TH\d+)\s+\w+\s+(.+?)\s+([\d.]+)\s+\$?([\d,]+\.?\d*)$'
             
             match = re.match(pattern, line)
             
@@ -186,38 +186,6 @@ class DocumentMatcherGUI:
         
         return items
 
-    def parse_document(self, pdf_path: str) -> OrderDocument:
-        """
-        Parse PDF document and return OrderDocument object
-        """
-        # Extract text from PDF
-        full_text = self.extract_text_from_pdf(pdf_path)
-        text_lines = full_text.split('\n')
-        
-        # Extract order number and total
-        order_number = self.extract_order_number(full_text)
-        total = self.extract_total(full_text)
-        
-        # Detect document type
-        full_text_upper = full_text.upper()
-        
-        # Check if it's a Dalmen confirmation
-        is_dalmen_confirmation = 'DALMEN' in full_text_upper and 'ORDER CONFIRMATION' in full_text_upper
-        
-        # Parse based on document type
-        if is_dalmen_confirmation:
-            print("Detected: DALMEN CONFIRMATION")
-            line_items = self.parse_dalmen_confirmation(text_lines)
-        else:
-            print("Detected: STANDARD FORMAT (using extract_line_items)")
-            line_items = self.extract_line_items(full_text)
-        
-        # Create and return OrderDocument
-        return OrderDocument(
-            order_number=order_number,
-            line_items=line_items,
-            total=total
-        )
 
     def print_log(self):
         import tempfile
@@ -364,6 +332,7 @@ class DocumentMatcherGUI:
 
             print("Matching documents...")
             result = self.match_documents(doc1, doc2)
+            result['order2'] = result['order1']
             print(f"Match result: {result}")
             
             print("Displaying result...")
@@ -405,6 +374,9 @@ class DocumentMatcherGUI:
         print(f"DEBUG order number text:\n{text[:500]}") 
         """Extract order number"""
         patterns = [
+            r'N[°o]\s*COMMANDE\s+DU\s+CLIENT\s*[\n\r]+\s*(\d+)',
+            r'CUSTOMER\s*ORDER\s*NO\.?\s*[\n\r]+\s*(\d+)',
+            r'CUSTOMERORDERNO\.?\s*(\d+)',
             r'K0C\s+2B0\s+(\d{4})',
             r'CUSTOMERORDERNO\.?\s*[\n\r]+\s*(\d+)',
             r'PO\s+number\s*[\n\r]+\s*(\d+)',
@@ -583,15 +555,24 @@ class DocumentMatcherGUI:
         print(f"  Contains 'ORDER CONFIRMATION': {'ORDER CONFIRMATION' in full_text_upper}")
         print(f"  Contains 'QUINCAILLERIE LION': {'QUINCAILLERIE LION' in full_text_upper}")
 
-        is_dalmen_confirmation = 'DALMEN' in full_text_upper and 'CONFIRMATION' in full_text_upper
+        is_lion_confirmation = ('ORDER CONFIRMATION' in full_text_upper and 
+                        ('LION' in full_text_upper or 'RICHELIEU' in full_text_upper or 
+                         'TH' in full_text_upper))
 
-        is_lion_facture = ('RICHELIEU' in full_text_upper or 'N° PRODUIT' in full_text_upper or 
-                   'PRIX UNITAIRE' in full_text_upper)
+        is_dalmen_confirmation = ('DALMEN' in full_text_upper and 
+                                'CONFIRMATION' in full_text_upper and
+                                not is_lion_confirmation)
 
-        is_lion_order = ('QUINCAILLERIE LION' in full_text_upper or 'LION' in full_text_upper) and not is_lion_facture
-        
-        # Parse based on document type
-        if is_dalmen_confirmation:
+        is_lion_facture = ('INVOICE' in full_text_upper or 'FACTURE' in full_text_upper or
+                        'N° PRODUIT' in full_text_upper or 'PRIX UNITAIRE' in full_text_upper)
+
+        is_lion_order = ('QUINCAILLERIE LION' in full_text_upper or 
+                        'LION' in full_text_upper) and not is_lion_facture and not is_lion_confirmation
+
+        if is_lion_confirmation:
+            print("✓ Detected: LION CONFIRMATION")
+            line_items = self.parse_dalmen_confirmation(text_lines)
+        elif is_dalmen_confirmation:
             print("✓ Detected: DALMEN CONFIRMATION")
             line_items = self.parse_dalmen_confirmation(text_lines)
         elif is_lion_facture:
@@ -605,11 +586,14 @@ class DocumentMatcherGUI:
             line_items = self.extract_line_items(full_text)
         
         # ALWAYS return OrderDocument, never return dict
-        return OrderDocument(
+        doc = OrderDocument(
             order_number=order_number,
             line_items=line_items,
             total=total
         )
+        doc.is_facture = is_lion_facture
+        return doc
+
     
     def normalize_code(self, code: str) -> str:
         """Normalize product code"""
@@ -638,37 +622,44 @@ class DocumentMatcherGUI:
         return agg
 
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
-        """Match two documents"""
         log = []
-        log.append("="*60)
-        log.append("MATCHING ANALYSIS")
-        log.append("="*60)
-        
+
         agg1 = self.aggregate(doc1.line_items)
         agg2 = self.aggregate(doc2.line_items)
-        
-        log.append(f"\nDoc1 aggregated items: {len(agg1)}")
-        for key, data in agg1.items():
-            log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
-        
-        log.append(f"\nDoc2 aggregated items: {len(agg2)}")
-        for key, data in agg2.items():
-            log.append(f"  {key}: {data['label']} = ${data['total']:.2f}")
+
+        # ── SUMMARY ───────────────────────────────────────────────────────
+        log.append("=" * 60)
+        log.append("SUMMARY")
+        log.append("=" * 60)
+
+        col_width = 38
+        header = f"{'Doc1 — ' + str(len(agg1)) + ' items':<{col_width}}  {'Doc2 — ' + str(len(agg2)) + ' items'}"
+        log.append(header)
+        log.append("-" * 60)
+
+        keys1 = list(agg1.items())
+        keys2 = list(agg2.items())
+        for i in range(max(len(keys1), len(keys2))):
+            left  = f"  {keys1[i][1]['label']}: ${keys1[i][1]['total']:.2f}" if i < len(keys1) else ""
+            right = f"  {keys2[i][1]['label']}: ${keys2[i][1]['total']:.2f}" if i < len(keys2) else ""
+            log.append(f"{left:<{col_width}}  {right}")
+
+       # ── MATCHING PROCESS ──────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("MATCHING PROCESS")
+        log.append("=" * 60)
 
         matched = 0
-        scored = 0
-
-        log.append("\n" + "-"*60)
-        log.append("MATCHING PROCESS:")
-        log.append("-"*60)
+        scored  = 0
 
         for key1, data1 in agg1.items():
             total1 = data1["total"]
             label1 = data1["label"]
-            best_match = None
+            best_match       = None
             best_match_total = 0.0
-            best_diff = float("inf")
-            best_sim = 0
+            best_diff        = float("inf")
+            best_sim         = 0
 
             for key2, data2 in agg2.items():
                 total2 = data2["total"]
@@ -679,55 +670,60 @@ class DocumentMatcherGUI:
                 else:
                     sim = self.calculate_similarity(
                         self.normalize_code(label1),
-                        self.normalize_code(label2)
-                    )
+                        self.normalize_code(label2))
                     if sim < 0.85:
                         sim = 0.0
 
                 diff = abs(total1 - total2)
-
                 if sim > 0.60 and diff < best_diff:
-                    best_match = label2
+                    best_match       = label2
                     best_match_total = total2
-                    best_diff = diff
-                    best_sim = sim
-            
-            log.append(f"\n{label1} (${total1:.2f})")
+                    best_diff        = diff
+                    best_sim         = sim
+
+            log.append("")
 
             if not best_match:
-                log.append(f" Not found on facture - skipped")
+                log.append(f"  {label1:<20}  →  not found on facture — skipped")
                 continue
-            
+
             scored += 1
-            threshold = max(5.0, total1 * 0.15)
+            threshold    = max(5.0, total1 * 0.15)
             matched_this = best_diff < threshold
 
-            log.append(f"  Best match: {best_match} (${total1-best_diff:.2f})")
-            log.append(f"  Similarity: {best_sim:.1%}, Diff: ${best_diff:.2f}, Threshold: ${threshold:.2f}")
-
-            if total1 > 0:
+            is_facture = hasattr(doc2, 'is_facture') and doc2.is_facture
+            if is_facture and total1 > 0:
                 price_diff_pct = abs(total1 - best_match_total) / total1 * 100
                 price_ok = price_diff_pct <= 15
-                log.append(f"  💲 Price: PO ${total1:.2f} | Facture ${best_match_total:.2f} | Diff: {price_diff_pct:.1f}% → {'✅' if price_ok else '❌'}")
                 if not price_ok:
                     matched_this = False
-            
-            log.append(f"  Result: {'✓ MATCH' if matched_this else '✗ NO MATCH'}")
+            else:
+                price_diff_pct = 0.0
+                price_ok = True
+
+            result_str = "✅ MATCH" if matched_this else "❌ NO MATCH"
+            sim_str    = f"(Similarity: {best_sim:.0%})"
+
+            log.append(f"  {label1:<20}  →  {best_match:<20}  {sim_str:<20}  {result_str}")
+            if is_facture:
+                log.append(f"  💲 Price:  PO ${total1:<10.2f}  |  Facture ${best_match_total:<10.2f}  |  Diff: {price_diff_pct:.1f}%  →  {'✅' if price_ok else '❌'}")
 
             if matched_this:
                 matched += 1
-            
+
+        # ── FINAL RESULT ──────────────────────────────────────────────────
         match_percentage = (matched / scored * 100) if scored > 0 else 0
-        documents_match = match_percentage >= 70
-        
-        log.append("\n" + "="*60)
-        log.append(f"FINAL RESULT: {matched}/{scored} items matched ({match_percentage:.1f}%)")
-        log.append(f"Documents match: {documents_match}")
-        log.append("="*60)
-        
-        # Store log
+        documents_match  = match_percentage >= 70
+
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f"  {matched}/{scored} items matched ({match_percentage:.1f}%)")
+        log.append(f"  Documents match: {'✅ YES' if documents_match else '❌ NO'}")
+        log.append("=" * 60)
+
         self.match_log = "\n".join(log)
-        # Also print to console
         print("\n" + self.match_log)
 
         return {
@@ -739,9 +735,11 @@ class DocumentMatcherGUI:
             "order2": doc2.order_number,
             "total1": doc1.total,
             "total2": doc2.total,
-            "total_diff": abs(doc1.total - doc2.total)
+            "total_diff": abs(doc1.total - doc2.total),
+            "price_check_ok": documents_match,
+            "is_confirmation": not (hasattr(doc2, 'is_facture') and doc2.is_facture),
         }
-    
+
     def display_result(self, result):
         self.progress.stop()
         self.progress.pack_forget()

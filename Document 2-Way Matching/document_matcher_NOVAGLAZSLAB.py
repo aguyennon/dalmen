@@ -562,7 +562,7 @@ class DocumentMatcherGUI:
             return None
 
     def verify_prices(self, doc2_items: List[LineItem]) -> None:
-        pdf_path = r"G:\2026 PRICE LIST\NOVATECH GLAZING 2026.pdf"
+        pdf_path = r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\NOVATECH GLAZING 2026.pdf"
 
         print(f"\n{'='*60}")
         print("PRICE VERIFICATION (GLAZING)")
@@ -590,7 +590,7 @@ class DocumentMatcherGUI:
 
     def load_novatech_price_catalog(self) -> Dict[str, float]:
         try:
-            excel_path = r"G:\2026 PRICE LIST\NOVATECH GLAZING PRICE LIST 2026 EXCEL VERSION.xlsx"
+            excel_path = r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\NOVATECH GLAZING PRICE LIST 2026 EXCEL VERSION.xlsx"
 
             print(f"DEBUG: Loading Novatech price catalog from Excel...")
 
@@ -634,7 +634,7 @@ class DocumentMatcherGUI:
 
     def load_novatech_slab_price_catalog(self) -> Dict[str, Dict]:
         try:
-            excel_path = r"G:\2026 PRICE LIST\Novatech_Prix_2026_SLAB.xlsx"
+            excel_path = r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\Novatech_Prix_2026_SLAB.xlsx"
 
             print(f"DEBUG: Loading Novatech SLAB price catalog from Excel...")
 
@@ -759,84 +759,83 @@ class DocumentMatcherGUI:
         else:
             line_items = []
 
-        return OrderDocument(
+        doc = OrderDocument(
             order_number=order_number,
             line_items=line_items,
             provider="NOVATECH_WINDOWS"
         )
+        doc.is_facture = is_facture
+        return doc
+
     
     def calculate_similarity(self, str1: str, str2: str) -> float:
         return SequenceMatcher(None, str1.lower(), str2.lower()).ratio()
     
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
         log = []
-        log.append("="*60)
-        log.append("NOVATECH WINDOWS ORDER MATCHING")
-        log.append("="*60)
-        
-        log.append(f"\n[ORDER NUMBERS]")
-        log.append(f" Doc1: {doc1.order_number}")
-        log.append(f" Doc2: {doc2.order_number}")
-        
-        order_match = doc1.order_number == doc2.order_number
-        if order_match:
-            log.append(" ✅ Order numbers match")
-        else:
-            log.append(" ❌ Order numbers do NOT match")
 
+        order_match = doc1.order_number == doc2.order_number
+
+        # ── SUMMARY ───────────────────────────────────────────────────────
+        log.append("=" * 60)
+        log.append("SUMMARY")
+        log.append("=" * 60)
+
+        col_width = 38
+        log.append(f"{'Doc1 — ' + str(len(doc1.line_items)) + ' items':<{col_width}}  {'Doc2 — ' + str(len(doc2.line_items)) + ' items'}")
+        log.append("-" * 60)
+
+        for i in range(max(len(doc1.line_items), len(doc2.line_items))):
+            left  = f"  {doc1.line_items[i].product_code} | Annexe: {doc1.line_items[i].annexe_pr}" if i < len(doc1.line_items) else ""
+            right = f"  {doc2.line_items[i].product_code} | Annexe: {doc2.line_items[i].annexe_pr}" if i < len(doc2.line_items) else ""
+            log.append(f"{left:<{col_width}}  {right}")
+
+        log.append("")
+        po_str = "✅ MATCH" if order_match else "❌ NO MATCH"
+        log.append(f"  Order Numbers — Doc1: {doc1.order_number}  |  Doc2: {doc2.order_number}  →  {po_str}")
+
+        # ── FILTER BY COMMON ANNEXE BASES ─────────────────────────────────
         doc1_bases = set()
         for item in doc1.line_items:
             if item.annexe_pr and len(item.annexe_pr.split('-')) >= 2:
-                base = '-'.join(item.annexe_pr.split('-')[:2])
-                doc1_bases.add(base)
+                doc1_bases.add('-'.join(item.annexe_pr.split('-')[:2]))
 
         doc2_bases = set()
         for item in doc2.line_items:
             if item.annexe_pr and len(item.annexe_pr.split('-')) >= 2:
-                base = '-'.join(item.annexe_pr.split('-')[:2])
-                doc2_bases.add(base)
+                doc2_bases.add('-'.join(item.annexe_pr.split('-')[:2]))
 
         common_bases = doc1_bases & doc2_bases
 
         if not common_bases:
-            log.append("\n⚠️ No common Annexe PR bases found between both documents.")
+            log.append("")
+            log.append("  ⚠️  No common Annexe PR bases found between both documents.")
         else:
-            log.append(f"\nCommon Annexe bases: {common_bases}")
+            log.append(f"  Common Annexe bases: {common_bases}")
 
         doc1_filtered = [item for item in doc1.line_items
-                         if item.annexe_pr and '-'.join(item.annexe_pr.split('-')[:2]) in common_bases]
+                        if item.annexe_pr and '-'.join(item.annexe_pr.split('-')[:2]) in common_bases]
         doc2_filtered = [item for item in doc2.line_items
-                         if item.annexe_pr and '-'.join(item.annexe_pr.split('-')[:2]) in common_bases]
-        
-        log.append(f"Filtered Doc1: {len(doc1.line_items)} → {len(doc1_filtered)} items")
-        log.append(f"Filtered Doc2: {len(doc2.line_items)} → {len(doc2_filtered)} items\n")
+                        if item.annexe_pr and '-'.join(item.annexe_pr.split('-')[:2]) in common_bases]
+
+        log.append(f"  Filtered Doc1: {len(doc1.line_items)} → {len(doc1_filtered)} items")
+        log.append(f"  Filtered Doc2: {len(doc2.line_items)} → {len(doc2_filtered)} items")
 
         doc1.line_items = doc1_filtered
         doc2.line_items = doc2_filtered
-        
-        log.append(f"{'='*60}\n")
-        log.append(f"DOC1 LINE ITEMS:")
-        log.append(f"{'='*60}")
-        for item in doc1.line_items:
-            log.append(f" {item.product_code} | Annexe: {item.annexe_pr}")
-            log.append(f" {item.description[:80]}")
 
-        log.append(f"\n{'='*60}")
-        log.append(f" DOC2 LINE ITEMS:")
-        log.append(f"{'='*60}")
-        for item in doc2.line_items:
-            log.append(f" {item.product_code} | Annexe: {item.annexe_pr}")
-            log.append(f" {item.description[:80]}")
+        # ── MATCHING PROCESS ──────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("MATCHING PROCESS")
+        log.append("=" * 60)
 
-        log.append(f"\n{'='*60}")
-        log.append(f"MATCHING RESULTS:")
-        log.append(f"\n{'='*60}")
+        matched     = 0
+        total_items = max(len(doc1.line_items), len(doc2.line_items)) if doc1.line_items or doc2.line_items else 0
 
-        matched = 0
-        total_items = max(len(doc1.line_items), len(doc2.line_items))
-
-        is_slab_matching = any('N900' in item.description or 'N600' in item.description or 'Coupe-FEU' in item.description 
-                                for item in doc1.line_items + doc2.line_items)
+        is_slab_matching = any('N900' in item.description or 'N600' in item.description or
+                            'Coupe-FEU' in item.description
+                            for item in doc1.line_items + doc2.line_items)
 
         for item1 in doc1.line_items:
             best_score = 0
@@ -844,192 +843,132 @@ class DocumentMatcherGUI:
 
             for item2 in doc2.line_items:
                 score = 0
-
-                if item1.annexe_pr and item2.annexe_pr:
-                    if item1.annexe_pr == item2.annexe_pr:
-                        score += 50
-
+                if item1.annexe_pr and item2.annexe_pr and item1.annexe_pr == item2.annexe_pr:
+                    score += 50
                 code_sim = self.calculate_similarity(item1.product_code, item2.product_code)
                 if code_sim > 0.8:
                     score += 30
-
                 if not is_slab_matching:
                     desc_sim = self.calculate_similarity(item1.description, item2.description)
                     if desc_sim > 0.6:
                         score += 20
-
                 if score > best_score:
                     best_score = score
                     best_match = item2
-            
-            log.append(f"\n{item1.product_code} | Annexe: {item1.annexe_pr}")
-            log.append(f" Description: {item1.description[:60]}")
+
+            log.append("")
+            result_str = "✅ MATCH" if best_match and best_score >= 50 else "❌ NO MATCH"
+            sim_str    = f"(Score: {best_score}/100)"
 
             if best_match:
-                log.append(f" → Best match: {best_match.product_code} | Annexe: {best_match.annexe_pr}")
-                log.append(f"    Similarity Score: {best_score}/100")
-
+                log.append(f"  {item1.product_code:<25}  →  {best_match.product_code:<25}  {sim_str:<16}  {result_str}")
+                log.append(f"  Annexe: {item1.annexe_pr}  →  {best_match.annexe_pr}")
                 if best_score >= 50:
-                    log.append("    ✅ MATCH")
                     matched += 1
-                else:
-                    log.append(" SCORE TOO LOW - NO MATCH")
             else:
-                log.append("    ❌ NO MATCH ")
+                log.append(f"  {item1.product_code:<25}  →  no match found")
 
         match_percentage = (matched / total_items * 100) if total_items > 0 else 0
-        documents_match = match_percentage >= 70 and order_match
+        documents_match  = match_percentage >= 70 and order_match
 
-        is_glazing = not any('N900' in item.description or 'N900v2' in item.description or 'N900v3' in item.description or
-                             'N600' in item.description or 'N700' in item.description or 'N300' in item.description or
-                             'Coupe-FEU' in item.description for item in doc1.line_items + doc2.line_items)
+        # ── FINAL RESULT ──────────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f"  {matched}/{total_items} items matched ({match_percentage:.1f}%)")
+        log.append(f"  Order numbers: {'✅ MATCH' if order_match else '❌ NO MATCH'}")
+        log.append(f"  Documents match: {'✅ YES' if documents_match else '❌ NO'}")
+        log.append("=" * 60)
 
-        if is_glazing:
-                log.append(f"\n{'='*60}")
-                log.append("PRICE VERIFICATION (GLAZING)")
-                log.append(f"{'='*60}")
-
-                catalog = self.load_novatech_price_catalog()
-                expected_markup = 27.87
-                tolerance = 2.0
-                price_issues = []
-
-                print(f"\nStarting price verification for {len(doc2.line_items)} items...")
-
-                for item in doc2.line_items:
-                    code = item.product_code
-                    facture_price = item.unit_price
-
-                    if facture_price == 0:
-                        log.append(f"\n{code}")
-                        log.append(f" No price extracted from facture")
-                        continue
-                        
-                    catalog_price = catalog.get(code)
-
-                    if catalog_price:
-                        actual_markup = ((catalog_price - facture_price) / facture_price) * 100
-                        expected_range = f"{expected_markup - tolerance:.2f}% - {expected_markup + tolerance:.2f}%"
-
-                        log.append(f"\n{code}")
-                        log.append(f"  Catalog Price: ${catalog_price:.2f}")
-                        log.append(f"  Facture Price: ${facture_price:.2f}")
-                        log.append(f"  Actual Markup: {actual_markup:.2f}%")
-                        log.append(f"  Expected Range: {expected_range}")
-
-                        if abs(actual_markup - expected_markup) > tolerance:
-                            log.append(f" MARKUP OUTSIDE TOLERANCE!!")
-                            price_issues.append({
-                                'code': code,
-                                'catalog': catalog_price,
-                                'facture': facture_price,
-                                'markup': actual_markup
-                            })
-                        else:
-                            log.append(f" Markup OK")
-                    else:
-                        log.append(f"\n{code}")
-                        log.append(f" Not found in catalog")
-                        price_issues.append({
-                            'code': code,
-                            'catalog': None,
-                            'facture': facture_price,
-                            'markup': None
-                        })
-
-                if price_issues:
-                    log.append(f"\n⚠️ Found {len(price_issues)} items with pricing issues!")
-                else:
-                    log.append(f"\n✅ All prices verified within tolerance!")
-
+        # ── PRICE VERIFICATION ────────────────────────────────────────────
+        is_glazing = not any('N900' in item.description or 'N900v2' in item.description or
+                            'N600' in item.description or 'N700' in item.description or
+                            'N300' in item.description or 'Coupe-FEU' in item.description
+                            for item in doc1.line_items + doc2.line_items)
         is_slab = not is_glazing
+        price_issues = []
 
-        if is_slab:
-            log.append(f"\n{'='*60}")
-            log.append("PRICE VERIFICATION (SLAB)")
-            log.append(f"{'='*60}")
+        is_facture = getattr(doc2, 'is_facture', False)
 
-            catalog = self.load_novatech_slab_price_catalog()
+        if is_glazing and is_facture:
+            log.append("")
+            log.append("=" * 60)
+            log.append("PRICE VERIFICATION  (GLAZING)")
+            log.append("=" * 60)
 
-            section_markups = {
-                'N300': {'discount': 0.478, 'markup_pct': 52.20, 'tolerance': 2.0},
-                'N600': {'discount': 0.535, 'markup_pct': 46.50, 'tolerance': 2.0},
-                'N700': {'discount': 0.535, 'markup_pct': 46.50, 'tolerance': 2.0},
-                'N900': {'discount': 0.598, 'markup_pct': 40.20, 'tolerance': 2.0}
-            }
-
-            price_issues = []
-
-            print(f"\nStarting price verification for {len(doc2.line_items)} items...")
+            catalog          = self.load_novatech_price_catalog()
+            expected_markup  = 27.87
+            tolerance        = 2.0
 
             for item in doc2.line_items:
-                code = item.product_code
+                code          = item.product_code
                 facture_price = item.unit_price
+                log.append("")
 
                 if facture_price == 0:
-                    log.append(f"\n{code}")
-                    log.append(f" No price extracted from facture")
+                    log.append(f"  {code:<30}  ⚠️  No price extracted")
                     continue
 
-                parts = code.split('-')
-                base_code = '-'.join(parts[:3]) if len(parts) >= 3 else code
-
-                catalog_entry = catalog.get(base_code)
-
-                if catalog_entry:
-                    catalog_price = catalog_entry['price']
-                    section = catalog_entry['section']
-
-                    markup_info = section_markups.get(section, section_markups['N900'])
-                    expected_discount = markup_info['discount']
-                    tolerance = markup_info['tolerance']
-
-                    expected_facture_price = catalog_price * expected_discount
-                    price_difference = abs(facture_price - expected_facture_price)
-
-                    log.append(f"\n{code} [{section}]")
-                    log.append(f"  Catalog Price: ${catalog_price:.2f}")
-                    log.append(f"  Expected Facture: ${expected_facture_price:.2f}")
-                    log.append(f"  Actual Facture: ${facture_price:.2f}")
-                    log.append(f"  Difference: ${price_difference:.2f}")
-                    log.append(f"  Price Multiplier: {expected_discount:.3f}")
-                    log.append(f"  Tolerance: ±${tolerance:.2f}")
-
-                    if price_difference > tolerance:
-                        log.append(f" PRICE OUTSIDE TOLERANCE!!")
-                        price_issues.append({
-                            'code': code,
-                            'section': section,
-                            'catalog': catalog_price,
-                            'expected': expected_facture_price,
-                            'facture': facture_price,
-                            'difference': price_difference
-                        })
-                    else:
-                        log.append(f" PRICE OK")
+                catalog_price = catalog.get(code)
+                if catalog_price:
+                    actual_markup = ((catalog_price - facture_price) / facture_price) * 100
+                    ok     = abs(actual_markup - expected_markup) <= tolerance
+                    status = "✅ OK" if ok else "❌ OUTSIDE TOLERANCE"
+                    log.append(f"  {code:<30}  Catalog: ${catalog_price:<8.2f}  Facture: ${facture_price:<8.2f}  Markup: {actual_markup:.1f}%  {status}")
+                    if not ok:
+                        price_issues.append(code)
                 else:
-                    log.append(f"\n{code}")
-                    log.append(f" Not found in catalog")
-                    price_issues.append({
-                        'code': code,
-                        'section': 'UNKNOWN',
-                        'catalog': None,
-                        'facture': facture_price,
-                        'difference': None
-                    })
+                    log.append(f"  {code:<30}  ❌ Not found in catalog")
+                    price_issues.append(code)
 
-            if price_issues:
-                log.append(f"\n⚠️ Found {len(price_issues)} items with pricing issues!")
-            else:
-                log.append(f"\n✅ All prices verified within tolerance!")
-        
-        self.match_log = "\n".join(log)
+            log.append("")
+            log.append(f"  {'✅ All prices verified!' if not price_issues else '⚠️  ' + str(len(price_issues)) + ' item(s) with pricing issues'}")
 
-        log.append(f"\n{'='*60}")
-        log.append(f"FINAL RESULT: {matched}/{total_items} items matched ({match_percentage:.1f}%)")
-        log.append(f"Order numbers: {'MATCH' if order_match else 'NO MATCH'}")
-        log.append(f"Documents Match: {documents_match}")
-        log.append(f"{'='*60}")
+        if is_slab and is_facture:
+            log.append("")
+            log.append("=" * 60)
+            log.append("PRICE VERIFICATION  (SLAB)")
+            log.append("=" * 60)
+
+            catalog = self.load_novatech_slab_price_catalog()
+            section_markups = {
+                'N300': {'discount': 0.478, 'tolerance': 2.0},
+                'N600': {'discount': 0.535, 'tolerance': 2.0},
+                'N700': {'discount': 0.535, 'tolerance': 2.0},
+                'N900': {'discount': 0.598, 'tolerance': 2.0},
+            }
+
+            for item in doc2.line_items:
+                code          = item.product_code
+                facture_price = item.unit_price
+                log.append("")
+
+                if facture_price == 0:
+                    log.append(f"  {code:<30}  ⚠️  No price extracted")
+                    continue
+
+                parts      = code.split('-')
+                base_code  = '-'.join(parts[:3]) if len(parts) >= 3 else code
+                entry      = catalog.get(base_code)
+
+                if entry:
+                    catalog_price = entry['price']
+                    section       = entry['section']
+                    info          = section_markups.get(section, section_markups['N900'])
+                    expected      = catalog_price * info['discount']
+                    diff          = abs(facture_price - expected)
+                    ok            = diff <= info['tolerance']
+                    status        = "✅ OK" if ok else "❌ OUTSIDE TOLERANCE"
+                    log.append(f"  {code:<30}  [{section}]  Catalog: ${catalog_price:<8.2f}  Expected: ${expected:<8.2f}  Facture: ${facture_price:<8.2f}  Diff: ${diff:.2f}  {status}")
+                    if not ok:
+                        price_issues.append(code)
+                else:
+                    log.append(f"  {code:<30}  ❌ Not found in catalog")
+                    price_issues.append(code)
+
+            log.append("")
+            log.append(f"  {'✅ All prices verified!' if not price_issues else '⚠️  ' + str(len(price_issues)) + ' item(s) with pricing issues'}")
 
         self.match_log = "\n".join(log)
         print("\n" + self.match_log)
@@ -1042,8 +981,8 @@ class DocumentMatcherGUI:
             "order1": doc1.order_number,
             "order2": doc2.order_number,
             "order_match": order_match,
+            "price_check_ok": len(price_issues) == 0 if (is_glazing or is_slab) and is_facture else None,
         }
-
     # ── UI DISPLAY ────────────────────────────────────────────────────────────
 
     def display_result(self, result):

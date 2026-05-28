@@ -42,7 +42,6 @@ class DocumentMatcherGUI:
         self.create_widgets()
 
     def create_widgets(self):
-        # Header 
         header = tk.Frame(self.root, bg=self.primary_color)
         header.pack(fill=tk.X)
 
@@ -72,17 +71,14 @@ class DocumentMatcherGUI:
             bg=self.primary_color, fg="#ffcccc"
         ).pack(side=tk.RIGHT, padx=4, pady=14)
 
-        # Body 
         body = tk.Frame(self.root, bg=self.bg_color, padx=24, pady=20)
         body.pack(fill=tk.BOTH, expand=True)
 
-        # Side-by-side doc panels 
         docs_row = tk.Frame(body, bg=self.bg_color)
         docs_row.pack(fill=tk.X)
         docs_row.columnconfigure(0, weight=1)
         docs_row.columnconfigure(1, weight=1)
 
-        # Doc 1 card
         card1 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
         card1.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -111,7 +107,6 @@ class DocumentMatcherGUI:
             relief=tk.FLAT, padx=16, pady=9
         ).pack(fill=tk.X)
 
-        # Doc 2 card
         card2 = tk.Frame(docs_row, bg="white", bd=1, relief=tk.SOLID)
         card2.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -140,7 +135,6 @@ class DocumentMatcherGUI:
             relief=tk.FLAT, padx=16, pady=9
         ).pack(fill=tk.X)
 
-        # Compare button
         self.compare_btn = tk.Button(
             body,
             text="⚡  Compare Documents",
@@ -152,10 +146,8 @@ class DocumentMatcherGUI:
         )
         self.compare_btn.pack(fill=tk.X, pady=(18, 0))
 
-        # Progress bar
         self.progress = ttk.Progressbar(body, mode='indeterminate')
 
-        # Result area 
         self.result_frame = tk.Frame(body, bg=self.bg_color)
         self.result_frame.pack(fill=tk.BOTH, expand=True, pady=(16, 0))
 
@@ -209,13 +201,28 @@ class DocumentMatcherGUI:
             adfast_doc = self.parse_adfast_confirmation(adfast_text)
 
             result = self.match_documents(dalmen_doc, adfast_doc)
-            self.root.after(0, self.display_result, result)
+            self.display_result(result)
 
         except Exception as e:
             import traceback
             err = traceback.format_exc()
             print(err)
             self.root.after(0, self.display_error, f"{str(e)}\n\n{err}")
+
+
+    def parse_document(self, pdf_path: str):
+        text = self.extract_pdf_text(pdf_path)
+        is_dalmen = "Rapport de commande" in text or "Dalmen Portes" in text
+        is_confirmation = "CONFIRMATION DE COMMANDE" in text.upper()
+        
+        if is_dalmen:
+            doc = self.parse_dalmen_order(text)
+        else:
+            doc = self.parse_adfast_confirmation(text)
+        
+        doc.is_confirmation = is_confirmation
+        return doc
+
 
     def extract_pdf_text(self, pdf_path: str) -> str:
         text = ""
@@ -226,21 +233,15 @@ class DocumentMatcherGUI:
                     text += page_text + "\n"
         return text
 
-    # HELPERS
     def normalize_code(self, code: str) -> str:
-        """Normalize product code: uppercase, strip spaces, unify separators."""
         code = code.upper().strip()
-        # Remove spaces around dashes
         code = re.sub(r'\s*-\s*', '-', code)
-        # Remove spaces between digits/letters and 'ML'
         code = re.sub(r'\s+ML', 'ML', code)
         code = re.sub(r'ML\s+', 'ML/', code)
-        # Strip trailing /Adseal or /ADSEAL
         code = re.sub(r'/ADSEAL$', '', code, flags=re.IGNORECASE)
         return code.strip()
 
     def extract_color_from_text(self, text: str) -> str:
-        """Return normalized English color name from French or English text."""
         mapping = {
             'NOIR': 'BLACK',
             'BLACK': 'BLACK',
@@ -267,18 +268,12 @@ class DocumentMatcherGUI:
         if m:
             return m.group(1).strip()
 
-        # search for the label and then grab the first standalone number after it
-        m = re.search(
-            r'Num[ée]ro de PO[\s\S]{0,60}?(\b\d{3,6}\b)',
-            text, re.IGNORECASE
-        )
+        m = re.search(r'Num[ée]ro de PO[\s\S]{0,60}?(\b\d{3,6}\b)', text, re.IGNORECASE)
         if m:
             candidate = m.group(1).strip()
-            # Reject numbers that are clearly phone/address fragments
             if candidate not in ('5630', '2268', '3070', '514', '613'):
                 return candidate
 
-        # Broader fallback 
         section = re.search(r'Num[ée]ro de PO([\s\S]{0,200})', text, re.IGNORECASE)
         if section:
             numbers = re.findall(r'\b(\d{3,6})\b', section.group(1))
@@ -289,18 +284,53 @@ class DocumentMatcherGUI:
 
         return "Unknown"
 
+    def load_adfast_price_list(self) -> Dict[str, float]:
+        catalog = {}
+        price_list_path = r"\\10.0.7.2\Group\2026 PRICE LIST\ADFAST - Les Produits Dalmen Ltd.pdf"
+        try:
+            with pdfplumber.open(price_list_path) as pdf:
+                for page in pdf.pages:
+                    tables = page.extract_tables()
+                    for table in tables:
+                        for row in table:
+                            if not row or len(row) < 2:
+                                continue
+                            code_cell = str(row[0] or "").strip()
+                            price_cell = str(row[-1] or "").strip()
+                            if not code_cell or not price_cell:
+                                continue
+                            if not re.search(r'\d+\s*ml', code_cell, re.IGNORECASE):
+                                continue
+                            price_str = re.sub(r'[^\d\.]', '', price_cell.replace(',', '.'))
+                            try:
+                                price = float(price_str)
+                                if price <= 0:
+                                    continue
+                                normalized = self.normalize_adfast_catalog_code(code_cell)
+                                catalog[normalized] = price
+                            except ValueError:
+                                continue
+            print(f"Loaded {len(catalog)} ADFAST price list entries")
+        except Exception as e:
+            print(f"WARNING: Could not load ADFAST price list: {e}")
+        return catalog
+
+    def normalize_adfast_catalog_code(self, code: str) -> str:
+        code = code.upper().strip()
+        code = re.sub(r'\s*-\s*', '-', code)
+        code = re.sub(r'\s+', '', code)
+        code = re.sub(r'^455[1-9]', '4550', code)
+        code = re.sub(r'-?ALL/', '-', code, flags=re.IGNORECASE)
+        code = re.sub(r'/ADSEAL$', '', code, flags=re.IGNORECASE)
+        code = re.sub(r'\s*ML', 'ML', code)
+        return code
 
     def parse_dalmen_order(self, text: str) -> OrderDocument:
-        print("\nDEBUG: Parsing Dalmen order...")
         po_number = self.extract_po_number(text)
-        print(f"  PO: {po_number}")
-
         items: List[LineItem] = []
         total = 0.0
-
         raw_lines = text.split('\n')
 
-        # Step 1: merge wrapped product-code lines 
         merged_lines = []
         i = 0
         while i < len(raw_lines):
@@ -311,7 +341,6 @@ class DocumentMatcherGUI:
                 next_line = raw_lines[i + 1].strip()
                 ml_match = re.match(r'^(\d+\s*ml)', next_line, re.IGNORECASE)
                 if ml_match:
-                    # Inject the ml code right after the dash
                     ml_part = ml_match.group(1).replace(' ', '')
                     line = line.replace(
                         partial_match.group(0),
@@ -322,7 +351,6 @@ class DocumentMatcherGUI:
                     merged_lines.append(line)
                     continue
 
-            # Case 2: line is ONLY a bare code prefix 
             if re.match(r'^\d{4}-$', line) and i + 1 < len(raw_lines):
                 merged_lines.append(line + raw_lines[i + 1].strip())
                 i += 2
@@ -331,17 +359,14 @@ class DocumentMatcherGUI:
             merged_lines.append(line)
             i += 1
 
-        # Step 2: parse each line 
         for line in merged_lines:
             line = line.strip()
             if not line:
                 continue
 
-            # Skip header / footer / total lines
             if re.match(r'^(Code|Pi[eè]ce|Total|Livr[eé]|Command[eé]|Date|Notes|ADFAST)', line, re.IGNORECASE):
                 continue
 
-            # Product lines start with a code: digits + dash + digits + 'ml'
             code_match = re.match(r'^(\d{4}-\d+\s*ml[\w/,]*)', line, re.IGNORECASE)
             if not code_match:
                 continue
@@ -349,7 +374,6 @@ class DocumentMatcherGUI:
             raw_code = code_match.group(1)
             product_code = self.normalize_code(raw_code)
 
-            # Dollar amounts on this line
             amounts = re.findall(r'([\d][\d\s]*[,\.][\d]{2,3})\s*\$', line)
             price = 0.0
             unit_price = 0.0
@@ -369,11 +393,8 @@ class DocumentMatcherGUI:
                     pass
 
             color = self.extract_color_from_text(line)
-
-            print(f"  Found: {product_code} | {color} | unit=${unit_price:.2f} | total=${price:.2f}")
             items.append(LineItem(product_code=product_code, color=color, price=price, unit_price=unit_price))
 
-        # Total line
         total_match = re.search(r'Total\s*:\s*([\d\s,\.]+)\s*\$', text)
         if total_match:
             ts = total_match.group(1).replace(' ', '').replace(',', '.')
@@ -382,36 +403,26 @@ class DocumentMatcherGUI:
             except ValueError:
                 pass
 
-        print(f"  Items: {len(items)}, Total: ${total:.2f}\n")
         return OrderDocument(po_number=po_number, line_items=items, total=total)
 
-
-    # ADFAST PARSER  — uses table extraction
     def parse_adfast_confirmation(self, text: str) -> OrderDocument:
-        print("\nDEBUG: Parsing ADFAST confirmation...")
         po_number = self.extract_po_number(text)
-        print(f"  PO: {po_number}")
-
         items: List[LineItem] = []
         total = 0.0
-
         lines = text.split('\n')
 
         i = 0
         while i < len(lines):
             line = lines[i].strip()
 
-            # Match ADFAST product code
             code_match = re.match(r'^(\d{4}-\d+\s*ml[/\w]*)', line, re.IGNORECASE)
             if code_match:
                 raw_code = code_match.group(1)
                 product_code = self.normalize_code(raw_code)
 
-                # Gather the next ~8 lines into a block to find color, qty, price
                 block_lines = [line]
                 for j in range(i + 1, min(i + 9, len(lines))):
                     next_line = lines[j].strip()
-                    # Stop at next product code or summary section
                     if re.match(r'^\d{4}-\d+', next_line):
                         break
                     if re.match(r'^(SOUS-TOTAL|TRANSPORT|HST|TOTAL|Paiement|Conditions)', next_line):
@@ -419,16 +430,12 @@ class DocumentMatcherGUI:
                     block_lines.append(next_line)
 
                 block = ' '.join(block_lines)
-
-                # Color
                 color = self.extract_color_from_text(block)
 
                 price = 0.0
                 unit_price = 0.0
 
-                # Find all decimal numbers in the block
                 all_nums = re.findall(r'\b(\d{1,3}(?:,\d{3})*\.\d{2})\b', block)
-                # Convert to floats, stripping commas
                 float_nums = []
                 for n in all_nums:
                     try:
@@ -439,22 +446,19 @@ class DocumentMatcherGUI:
                 non_qty = [n for n in float_nums if not (n == round(n) and n > 50)]
 
                 if len(non_qty) >= 2:
-                    unit_price = non_qty[-2]  # Prix column = second to last
-                    price = non_qty[-1]        # Total column = last
+                    unit_price = non_qty[-2]
+                    price = non_qty[-1]
                 elif len(non_qty) == 1:
                     unit_price = non_qty[0]
                     price = non_qty[0]
                 elif float_nums:
-                    # All numbers were qty-like — take last two as fallback
                     unit_price = float_nums[-2] if len(float_nums) >= 2 else float_nums[-1]
                     price = float_nums[-1]
 
-                print(f"  Found: {product_code} | {color} | unit=${unit_price:.2f} | total=${price:.2f}")
                 items.append(LineItem(product_code=product_code, color=color, price=price, unit_price=unit_price))
 
             i += 1
 
-        # Total — SOUS-TOTAL 
         st_match = re.search(r'SOUS-TOTAL\s*:\s*\$([\d,]+\.\d{2})', text)
         if st_match:
             try:
@@ -462,7 +466,6 @@ class DocumentMatcherGUI:
             except ValueError:
                 pass
 
-        # Fallback
         if total == 0.0:
             total_match = re.search(r'TOTAL\s+\$([\d,]+\.\d{2})\s*CAD', text)
             if total_match:
@@ -471,130 +474,181 @@ class DocumentMatcherGUI:
                 except ValueError:
                     pass
 
-        print(f"  Items: {len(items)}, Total: ${total:.2f}\n")
         return OrderDocument(po_number=po_number, line_items=items, total=total)
 
-
-    # MATCHING  — 4 criteria, need 3/4 to pass
     def codes_match(self, c1: str, c2: str) -> bool:
         c1, c2 = self.normalize_code(c1), self.normalize_code(c2)
         if c1 == c2:
             return True
-        # Allow fuzzy: e.g. "4553-600ML" vs "4553-600ML"
         ratio = SequenceMatcher(None, c1, c2).ratio()
         return ratio >= 0.90
 
-    def match_documents(self, dalmen: OrderDocument, adfast: OrderDocument) -> Dict:
-        log = []
-        log.append("=" * 60)
-        log.append("ADFAST ORDER MATCHING REPORT")
-        log.append("=" * 60)
 
-        # Criteria 1: PO Number 
+    def match_documents(self, doc1, doc2) -> Dict:
+        dalmen = doc1
+        adfast = doc2
+
+        print(f" DEBUG is_confirmation: {getattr(adfast, 'is_confirmation', 'NOT SET')}")
+
+        log = []
+
+        if not hasattr(self, '_adfast_catalog'):
+            self._adfast_catalog = self.load_adfast_price_list()
+
         po_match = (dalmen.po_number != "Unknown" and
                     adfast.po_number != "Unknown" and
                     dalmen.po_number == adfast.po_number)
-        log.append(f"\n[1] PO NUMBER")
-        log.append(f"    Dalmen : {dalmen.po_number}")
-        log.append(f"    ADFAST : {adfast.po_number}")
-        log.append(f"    Result : {'✅ MATCH' if po_match else '❌ NO MATCH'}")
 
-        log.append(f"\n[2/3/4] LINE ITEM MATCHING  (need 3 of 4 criteria per item)")
-        log.append("-" * 60)
+        # ── SUMMARY ───────────────────────────────────────────────────────
+        log.append("=" * 60)
+        log.append("SUMMARY")
+        log.append("=" * 60)
 
-        matched_items = 0
+        col_width = 38
+        log.append(f"{'Doc1 (Dalmen) - ' + str(len(dalmen.line_items)) + ' items':<{col_width}} {'Doc2 (ADFAST) - ' + str(len(adfast.line_items)) + ' items'}")
+        log.append("=" * 60)
+
+        for i in range(max(len(dalmen.line_items), len(adfast.line_items))):
+            left  = f" {dalmen.line_items[i].product_code} | {dalmen.line_items[i].color}" if i < len(dalmen.line_items) else ""
+            right = f"{adfast.line_items[i].product_code} | {adfast.line_items[i].color}" if i < len(adfast.line_items) else ""
+            log.append(f"{left:<{col_width}} {right}")
+
+        log.append("")
+        po_str = "✅ MATCH" if po_match else "❌ NO MATCH"
+        log.append(f" PO Number - Dalmen: {dalmen.po_number} | ADFAST: {adfast.po_number} -> {po_str}")
+
+        # ── MATCHING PROCESS ──────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("MATCHING PROCESS  (need 3 of 4 criteria: PO / Code / Color / Price)")
+        log.append("=" * 60)
+
+        matched_items   = 0
         unmatched_dalmen = []
-        used_adfast = set()
-        all_color_ok = []
-        all_price_ok = []
+        used_adfast     = set()
+        all_color_ok    = []
+        all_price_ok    = []
 
-        # For each Dalmen item, find the best ADFAST item
         for d_item in dalmen.line_items:
             best_adfast = None
-            best_score = -1
+            best_score  = -1
             best_detail = {}
 
             for idx, a_item in enumerate(adfast.line_items):
                 if idx in used_adfast:
                     continue
 
-                detail = {}
-
-                # Code
-                code_ok = self.codes_match(d_item.product_code, a_item.product_code)
+                detail   = {}
+                code_ok  = self.codes_match(d_item.product_code, a_item.product_code)
                 detail['code'] = ('✅', d_item.product_code, a_item.product_code) if code_ok else ('❌', d_item.product_code, a_item.product_code)
 
-                # Color
                 if d_item.color and a_item.color:
                     color_ok = d_item.color.upper() == a_item.color.upper()
                 elif not d_item.color and not a_item.color:
-                    color_ok = True   # both missing means not penalized
+                    color_ok = True
                 else:
-                    color_ok = False  # one has color, other doesn't
+                    color_ok = False
                 detail['color'] = ('✅', d_item.color, a_item.color) if color_ok else ('❌', d_item.color, a_item.color)
 
-                # Price — compare line totals
-                d_unit = d_item.price
-                a_unit = a_item.price
-                if d_unit > 0 and a_unit > 0:
-                    tol = max(d_unit, a_unit) * 0.02
-                    price_ok = abs(d_unit - a_unit) <= tol
-                elif d_unit == 0 and a_unit == 0:
-                    price_ok = True
+                d_norm        = self.normalize_adfast_catalog_code(d_item.product_code)
+                a_norm        = self.normalize_adfast_catalog_code(a_item.product_code)
+                catalog_price = self._adfast_catalog.get(a_norm) or self._adfast_catalog.get(d_norm)
+
+                is_confirmation = getattr(adfast, 'is_confirmation', False)
+                if not is_confirmation and catalog_price and a_item.unit_price > 0:
+                    tol = catalog_price * 0.03
+                    price_ok = abs(a_item.unit_price - catalog_price) <= tol
+                    detail['price'] = ('✅', a_item.unit_price, catalog_price) if price_ok else ('❌', a_item.unit_price, catalog_price)
                 else:
-                    price_ok = False
-                detail['price'] = ('✅', d_unit, a_unit) if price_ok else ('❌', d_unit, a_unit)
+                    price_ok = True
+                    detail['price'] = ('-', 0.0, 0.0)
 
                 score = sum([code_ok, color_ok, price_ok])
                 if score > best_score:
-                    best_score = score
+                    best_score  = score
                     best_adfast = (idx, a_item)
                     best_detail = detail
 
-            # Criterion counts: PO (shared) + code + color + price = 4 total
-            # For this item: code + color + price can contribute up to 3.
             criteria_met = (1 if po_match else 0) + best_score
-            item_passes = criteria_met >= 3
+            item_passes  = criteria_met >= 3
 
-            a_code = best_adfast[1].product_code if best_adfast else "—"
-            a_color = best_adfast[1].color if best_adfast else "—"
-            a_unit = best_adfast[1].price if best_adfast else 0.0
-            d_unit = d_item.price
+            a_code  = best_adfast[1].product_code if best_adfast else "—"
+            a_unit  = best_adfast[1].price if best_adfast else 0.0
+            d_unit  = d_item.price
 
-            log.append(f"\n  Dalmen: {d_item.product_code} | {d_item.color} | total=${d_unit:.2f}")
-            log.append(f"  ADFAST: {a_code} | {a_color} | total=${a_unit:.2f}")
-            log.append(f"  Criteria met: {criteria_met}/4  (PO={'✅' if po_match else '❌'}  "
-                       f"Code={best_detail.get('code',('?','',''))[0]}  "
-                       f"Color={best_detail.get('color',('?','',''))[0]}  "
-                       f"Price={best_detail.get('price',('?','',''))[0]})")
-            log.append(f"  → {'✅ PASS' if item_passes else '❌ FAIL'}")
+            code_icon  = best_detail.get('code',  ('❌',))[0]
+            color_icon = best_detail.get('color', ('❌',))[0]
+            price_icon = best_detail.get('price', ('❌',))[0]
+            po_icon    = '✅' if po_match else '❌'
+            result_str = "✅ PASS" if item_passes else "❌ FAIL"
+
+            log.append("")
+            log.append(f" {d_item.product_code:<20} -> {a_code:<20} {result_str}")
+            is_confirmation = getattr(adfast, 'is_confirmation', False)
+            price_display = f"Price {price_icon}" if not is_confirmation else "Price -"
+            log.append(f" PO {po_icon} Code {code_icon} Color {color_icon} {price_display} ({criteria_met}/4 criterias met)")
+            if not is_confirmation:
+                log.append(f" Dalmen: ${d_unit:<10.2f} ADFAST: ${a_unit:.2f}")
 
             if item_passes and best_adfast:
                 matched_items += 1
                 used_adfast.add(best_adfast[0])
-                all_color_ok.append(best_detail.get('color', ('❌',))[0] == '✅')
-                all_price_ok.append(best_detail.get('price', ('❌',))[0] == '✅')
+                all_color_ok.append(color_icon == '✅')
+                all_price_ok.append(price_icon == '✅')
             else:
                 unmatched_dalmen.append(d_item)
                 all_color_ok.append(False)
                 all_price_ok.append(False)
 
-        total_items = len(dalmen.line_items)
-        match_pct = (matched_items / total_items * 100) if total_items > 0 else 0
-        overall_match = matched_items == total_items  # all items have to pass
+        # ── FINAL RESULT ──────────────────────────────────────────────────
+        total_items   = len(dalmen.line_items)
+        match_pct     = (matched_items / total_items * 100) if total_items > 0 else 0
+        overall_match = matched_items == total_items
 
-        log.append("\n" + "=" * 60)
-        log.append("SUMMARY")
+        log.append("")
         log.append("=" * 60)
-        log.append(f"  PO Match   : {'YES' if po_match else 'NO'}")
-        log.append(f"  Items      : {matched_items} / {total_items} passed")
-        log.append(f"  Confidence : {match_pct:.1f}%")
-        log.append(f"  DOCUMENTS  : {'✅ MATCH' if overall_match else '❌ DO NOT MATCH'}")
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f" {matched_items}/{total_items} items passed ({match_pct:.1f}%)")
+        log.append(f" Documents match: {'✅ YES' if overall_match else '❌ NO'}")
 
         if unmatched_dalmen:
-            log.append("\nUnmatched Dalmen items:")
+            log.append("")
+            log.append(" Unmatched Dalmen items:")
             for it in unmatched_dalmen:
-                log.append(f"  • {it.product_code} | {it.color} | ${it.price:.2f}")
+                log.append(f" • {it.product_code} | {it.color} | {it.price:.2f}")
+        log.append("=" * 60)
+
+        # ── PRICE VERIFICATION ────────────────────────────────────────────
+        is_confirmation = getattr(adfast, 'is_confirmation', False)
+        print(f"DEBUG price verification gate: is_confirmation={is_confirmation}")
+        if not is_confirmation:
+            log.append("")
+            log.append("=" * 60)
+            log.append("PRICE VERIFICATION")
+            log.append("=" * 60)
+
+            for d_item in dalmen.line_items:
+                d_norm        = self.normalize_adfast_catalog_code(d_item.product_code)
+                catalog_price = self._adfast_catalog.get(d_norm)
+
+                adfast_unit = None
+                for a_item in adfast.line_items:
+                    if self.codes_match(d_item.product_code, a_item.product_code):
+                        adfast_unit = a_item.unit_price
+                        break
+
+                log.append("")
+                if catalog_price and adfast_unit is not None:
+                    diff     = abs(adfast_unit - catalog_price)
+                    tol      = catalog_price * 0.03
+                    price_ok = diff <= tol
+                    status   = "✅ PASS" if price_ok else "❌ FAIL"
+                    log.append(f"  {d_item.product_code:<20}  PRICE LIST: ${catalog_price:<8.2f}  FACTURE: ${adfast_unit:<8.2f}  Diff: ${diff:.2f}  {status}")
+                elif catalog_price:
+                    log.append(f"  {d_item.product_code:<20}  PRICE LIST: ${catalog_price:.2f}  — ADFAST price not found")
+                else:
+                    log.append(f"  {d_item.product_code:<20}  ❌ Not in price list")
 
         self.match_log = "\n".join(log)
         print("\n" + self.match_log)
@@ -604,16 +658,18 @@ class DocumentMatcherGUI:
             "confidence": match_pct,
             "matched_items": matched_items,
             "total_items": total_items,
+            "order1": dalmen.po_number,
+            "order2": adfast.po_number,
             "po1": dalmen.po_number,
             "po2": adfast.po_number,
             "total1": dalmen.total,
             "total2": adfast.total,
             "color_match": all(all_color_ok) if all_color_ok else False,
             "price_match": all(all_price_ok) if all_price_ok else False,
+            "is_confirmation": is_confirmation,
         }
 
 
-    # UI DISPLAY
 
     def display_result(self, result):
         self.progress.stop()
@@ -627,17 +683,14 @@ class DocumentMatcherGUI:
         is_match = result['match']
         accent = self.success_color if is_match else self.error_color
 
-        # Result card
         card = tk.Frame(self.result_frame, bg="white", bd=1, relief=tk.SOLID)
         card.pack(fill=tk.BOTH, expand=True)
 
-        # Coloured top stripe
         tk.Frame(card, bg=accent, height=5).pack(fill=tk.X)
 
         inner = tk.Frame(card, bg="white", padx=24, pady=18)
         inner.pack(fill=tk.BOTH, expand=True)
 
-        # icon + verdict + confidence
         top_row = tk.Frame(inner, bg="white")
         top_row.pack(fill=tk.X)
 
@@ -656,10 +709,8 @@ class DocumentMatcherGUI:
                  font=("Arial", 11), bg="white", fg="#666"
                  ).pack(side=tk.RIGHT)
 
-        # Divider
         tk.Frame(inner, bg="#e0e0e0", height=1).pack(fill=tk.X, pady=(14, 14))
 
-        # Stats row 
         stats = tk.Frame(inner, bg="white")
         stats.pack(fill=tk.X, pady=(0, 14))
 
@@ -680,7 +731,6 @@ class DocumentMatcherGUI:
         stat_box(stats, "Color",         f"{color_icon}  {'Match' if result.get('color_match') else 'No Match'}", 2)
         stat_box(stats, "Price",         f"{price_icon}  {'Match' if result.get('price_match') else 'No Match'}", 3)
 
-        # ── View Log button ──────────────────────────────────────────
         tk.Button(
             inner,
             text="📋  View Detailed Log",

@@ -5,7 +5,6 @@ NOVATECH
 ** MAY NEED TO FIX COLOURS **
 """
 
-from email.mime import text
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from tkinter import scrolledtext
@@ -702,176 +701,121 @@ class DocumentMatcherGUI:
 
     def match_resiver_documents(self, doc1, doc2):
         log = []
-        log.append("="*60)
-        log.append("RESIVER/NOVATECH FINGERPRINT MATCHING")
-        log.append("="*60)
-        
-        score = 0
-        
-        log.append(f"\nOrder Numbers:")
-        log.append(f"  Doc1: {doc1.order_number}")
-        log.append(f"  Doc2: {doc2.order_number}")
 
-        base1 = doc1.order_number.split('-')[:3]
-        base2 = doc2.order_number.split('-')[:3]
-        base1_str = '-'.join(base1) if len(base1) >= 3 else doc1.order_number
-        base2_str = '-'.join(base2) if len(base2) >= 3 else doc2.order_number
-        
-        if doc1.order_number == doc2.order_number and doc1.order_number != "Unknown":
-            score += 50
-            log.append("  ✓ EXACT MATCH (+50 points)")
-        elif base1_str == base2_str and base1_str != "Unknown":
-            score += 48
-            log.append(f"  ✓ BASE MATCH ({base1_str}, +48 points)")
-        elif doc1.order_number != "Unknown" and doc2.order_number != "Unknown":
-            if doc1.order_number in doc2.order_number or doc2.order_number in doc1.order_number:
-                score += 45
-                log.append("  ~ PARTIAL MATCH (+45 points)")
-            else:
-                similarity = self.calculate_similarity(doc1.order_number, doc2.order_number)
-                if similarity > 0.7:
-                    score += 40
-                    log.append(f"  ~ SIMILAR ({similarity:.0%} match, +40 points)")
-                else:
-                    log.append("  ✗ Different order numbers (0 points)")
-        else:
-            log.append("  ✗ Order number missing from one document")
-            log.append(" - Will rely on fingerprint matching")
-            score += 20
-
-        log.append(f"\n{'='*60}")
-        log.append("PRODUCT FINGERPRINT COMPARISON:")
-        log.append(f"{'='*60}")
-        
         fp1 = doc1.fingerprint
         fp2 = doc2.fingerprint
-        
-        fingerprint_score = 0
-        fingerprint_max = 0
-        
-        log.append(f"\n[CATEGORY]")
-        log.append(f"  Doc1: {fp1.category or 'Not specified'}")
-        log.append(f"  Doc2: {fp2.category or 'Not specified'}")
-        if fp1.category and fp2.category:
-            fingerprint_max += 5
-            if fp1.category == fp2.category:
-                fingerprint_score += 5
-                log.append(f"  ✓ Match (+5)")
-            else:
-                log.append(f"  ✗ Different")
-        
-        log.append(f"\n[CONFIGURATION]")
-        log.append(f"  Doc1: {fp1.configuration or 'Not specified'}")
-        log.append(f"  Doc2: {fp2.configuration or 'Not specified'}")
-        if fp1.configuration and fp2.configuration:
-            fingerprint_max += 15
-            if fp1.configuration == fp2.configuration:
-                fingerprint_score += 15
-                log.append(f"  ✓ Match (+15)")
-            else:
-                log.append(f"  ✗ Different")
-        
-        log.append(f"\n[DIMENSIONS]")
-        log.append(f"  Doc1: {fp1.width:.2f}\" x {fp1.height:.2f}\"")
-        log.append(f"  Doc2: {fp2.width:.2f}\" x {fp2.height:.2f}\"")
-        if fp1.width and fp2.width and fp1.height and fp2.height:
-            fingerprint_max += 15
-            width_diff = abs(fp1.width - fp2.width)
-            height_diff = abs(fp1.height - fp2.height)
-            
-            if width_diff < 0.5 and height_diff < 0.5:
-                fingerprint_score += 15
-                log.append(f"  ✓ Match within tolerance (+15)")
-            elif width_diff < 1.0 and height_diff < 1.0:
-                fingerprint_score += 10
-                log.append(f"  ~ Close match (+10)")
-            else:
-                log.append(f"  ✗ Different (diff: {width_diff:.2f}\" x {height_diff:.2f}\")")
-        
-        log.append(f"\n[FRAME MATERIAL]")
-        log.append(f"  Doc1: {fp1.frame or 'Not specified'}")
-        log.append(f"  Doc2: {fp2.frame or 'Not specified'}")
-        if fp1.frame and fp2.frame:
-            fingerprint_max += 5
-            if fp1.frame == fp2.frame:
-                fingerprint_score += 5
-                log.append(f"  ✓ Match (+5)")
-            else:
-                log.append(f"  ✗ Different")
-        
-        log.append(f"\n[GLASS CONFIGURATION]")
-        log.append(f"  Doc1: Low-E: {fp1.low_e}, Argon: {fp1.argon}")
-        log.append(f"  Doc2: Low-E: {fp2.low_e}, Argon: {fp2.argon}")
-        fingerprint_max += 5
-        if fp1.low_e == fp2.low_e and fp1.argon == fp2.argon:
-            fingerprint_score += 5
-            log.append(f"  ✓ Full match (+5)")
-        elif fp1.low_e == fp2.low_e or fp1.argon == fp2.argon:
-            fingerprint_score += 3
-            log.append(f"  ~ Partial match (+3)")
-        else:
-            log.append(f"  ✗ Different")
-        
-        log.append(f"\n[COLORS]")
-        log.append(f"  Doc1: Interior={fp1.interior_color or 'N/A'}, Exterior={fp1.exterior_color or 'N/A'}")
-        log.append(f"  Doc2: Interior={fp2.interior_color or 'N/A'}, Exterior={fp2.exterior_color or 'N/A'}")
-        
-        if (fp1.interior_color or fp1.exterior_color) and (fp2.interior_color or fp2.exterior_color):
-            fingerprint_max += 5
-            color_match = True
-            if fp1.interior_color and fp2.interior_color and fp1.interior_color != fp2.interior_color:
-                color_match = False
-            if fp1.exterior_color and fp2.exterior_color and fp1.exterior_color != fp2.exterior_color:
-                color_match = False
-            
-            if color_match:
-                fingerprint_score += 5
-                log.append(f"  ✓ Colors match (+5)")
-            else:
-                log.append(f"  ✗ Different colors")
-        
-        log.append(f"\n[EXTRAS/OPTIONS]")
-        log.append(f"  Doc1: {', '.join(sorted(fp1.extras)) if fp1.extras else 'None'}")
-        log.append(f"  Doc2: {', '.join(sorted(fp2.extras)) if fp2.extras else 'None'}")
-        
-        if fp1.extras or fp2.extras:
-            fingerprint_max += 10
-            if fp1.extras and fp2.extras:
-                extras_union = len(fp1.extras | fp2.extras)
-                extras_intersect = len(fp1.extras & fp2.extras)
-                if extras_union > 0:
-                    extras_score = 10 * (extras_intersect / extras_union)
-                    fingerprint_score += extras_score
-                    log.append(f"  ~ Similarity: {extras_intersect}/{extras_union} ({extras_score:.1f} points)")
-            else:
-                log.append(f"  - Only one document has extras specified")
-        
-        if fingerprint_max > 0:
-            fp_percentage = (fingerprint_score / fingerprint_max) * 100
-            score += (fp_percentage / 100) * 50
-            log.append(f"\nFingerprint Score: {fingerprint_score:.1f}/{fingerprint_max} = {fp_percentage:.1f}%")
-            log.append(f"Contributes: {(fp_percentage / 100) * 50:.1f}")
-        else:
-            log.append(f"\n Warning: No comparable fingerprint data found")
 
-        documents_match = score >= 70
-        
-        log.append("\n" + "="*60)
-        log.append(f"FINAL SCORE: {score:.1f}/100")
-        log.append(f"Threshold: 70 points")
-        log.append(f"Result: {'✓ DOCUMENTS MATCH' if documents_match else '✗ DOCUMENTS DO NOT MATCH'}")
+        # ── ORDER NUMBERS ─────────────────────────────────────────────────
         log.append("="*60)
+        log.append("RESIVER/NOVATECH SUMMARY")
+        log.append("="*60)
+
+        base1 = '-'.join(doc1.order_number.split('-')[:3]) if doc1.order_number != "Unknown" else doc1.order_number
+        base2 = '-'.join(doc2.order_number.split('-')[:3]) if doc2.order_number != "Unknown" else doc2.order_number
+
+        if doc1.order_number == doc2.order_number and doc1.order_number != "Unknown" :
+            order_str = "✅ EXACT MATCH"
+            score = 50
+        elif base1 == base2 and base1 != "Unknown":
+            order_str = f"✅ BASE MATCH ({base1})"
+            score = 48
+        elif doc1.order_number != "Unknown" and doc2.order_number != "Unknown":
+            sim = self.calculate_similarity(doc1.order_number, doc2.order_number)
+            if doc1.order_number in doc2.order_number or doc2.order_number in doc1.order_number:
+                order_str = "~ PARTIAL MATCH"
+                score = 45
+            elif sim > 0.7:
+                order_str = f"~ SIMILAR ({sim:.0%})"
+                score = 40
+            else:
+                order_str = "❌ NO MATCH"
+                score = 0
+        else:
+            order_str = "⚠️  Missing from one document"
+            score = 20
+
+        log.append(f" Doc1 Order: {doc1.order_number}")
+        log.append(f" Doc2 Order: {doc2.order_number}")
+        log.append(f" Result: {order_str}")
+
+        # ── FINGERPRINT ───────────────────────────────────────────────────
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINGERPRINT MATCHING")
+        log.append("=" * 60)
+        
+        fp_score = 0
+        fp_max = 0
+        col = 28
+
+        def fp_row(label, v1, v2, match, pts):
+            nonlocal fp_score, fp_max
+            icon = "✅" if match else "❌"
+            log.append(f"  {label:<18}  {str(v1):<{col}}  {str(v2):<{col}}  {icon}  (+{pts if match else 0})")
+            if v1 and v2:
+                fp_max += pts
+                if match: 
+                    fp_score += pts
+
+        log.append(f" {'Category':<18} {'Doc1':<{col}} {'Doc2':<{col}} Results")
+        log.append(" " + "-" * (18 + col * 2 + 12))
+
+        fp_row("Category",      fp1.category or "—",      fp2.category or "—",
+           fp1.category == fp2.category if fp1.category and fp2.category else False, 5)
+        fp_row("Configuration", fp1.configuration or "—", fp2.configuration or "—",
+            fp1.configuration == fp2.configuration if fp1.configuration and fp2.configuration else False, 15)
+
+        w_match = abs(fp1.width - fp2.width) < 0.5 if fp1.width and fp2.width else False
+        h_match = abs(fp1.height - fp2.height) < 0.5 if fp1.height and fp2.height else False
+        fp_row("Width",         f'{fp1.width:.2f}"' if fp1.width else "—",
+            f'{fp2.width:.2f}"' if fp2.width else "—", w_match, 7)
+        fp_row("Height",        f'{fp1.height:.2f}"' if fp1.height else "—",
+            f'{fp2.height:.2f}"' if fp2.height else "—", h_match, 8)
+        fp_row("Frame",         fp1.frame or "—",         fp2.frame or "—",
+            fp1.frame == fp2.frame if fp1.frame and fp2.frame else False, 5)
+        fp_row("Low-E",         str(fp1.low_e),            str(fp2.low_e),
+            fp1.low_e == fp2.low_e, 3)
+        fp_row("Argon",         str(fp1.argon),            str(fp2.argon),
+            fp1.argon == fp2.argon, 2)
+        fp_row("Int. Color",    fp1.interior_color or "—", fp2.interior_color or "—",
+            fp1.interior_color == fp2.interior_color if fp1.interior_color and fp2.interior_color else False, 3)
+        fp_row("Ext. Color",    fp1.exterior_color or "—", fp2.exterior_color or "—",
+            fp1.exterior_color == fp2.exterior_color if fp1.exterior_color and fp2.exterior_color else False, 2)
+
+        if fp1.extras or fp2.extras:
+            e1 = fp1.extras or set()
+            e2 = fp2.extras or set()
+            union = len(e1 | e2)
+            inter = len(e1 & e2)
+            extras_pts = int(10 * (inter / union)) if union else 0
+            fp_max += 10
+            fp_score += extras_pts
+            log.append(f"  {'Extras':<18}  {', '.join(sorted(e1)) or '—':<{col}}  {', '.join(sorted(e2)) or '—':<{col}}  {extras_pts}/10 pts")
+        
+        fp_pct = (fp_score / fp_max * 100) if fp_max > 0 else 0
+        score += (fp_pct / 100) * 50
+
+        log.append("")
+        log.append(f" Fingerprint: {fp_score}/{fp_max} = {fp_pct:.1f}% -> contributes {(fp_pct/100)*50:.1f}/50 pts")
+
+        # ── FINAL RESULT ──────────────────────────────────────────────────
+        documents_match = score >= 70
+
+        log.append("")
+        log.append("=" * 60)
+        log.append("FINAL RESULT")
+        log.append("=" * 60)
+        log.append(f" Total score: {score:.1f} / 100")
+        log.append(f" Threshold: 70")
+        log.append(f"  Documents match: {'✅ YES' if documents_match else '❌ NO'}")
+        log.append("=" * 60)
         
         self.match_log = "\n".join(log)
         print("\n" + self.match_log)
 
-        fp1 = doc1.fingerprint
-        fp2 = doc2.fingerprint
         config_match = bool(fp1.configuration and fp2.configuration and fp1.configuration == fp2.configuration)
-        frame_match  = bool(fp1.frame and fp2.frame and fp1.frame == fp2.frame)
-
-        # Order is considered matched for exact, base, partial, or similar
-        order_match = score >= 40  # any branch that added ≥40 points means orders are related
+        frame_match = bool(fp1.frame and fp2.frame and fp1.frame == fp2.frame)
+        order_match = score >= 40
 
         return {
             "match": documents_match,
