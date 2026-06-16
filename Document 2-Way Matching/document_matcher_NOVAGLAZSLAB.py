@@ -18,7 +18,17 @@ from pdf2image import convert_from_path
 import pytesseract
 import pandas as pd
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+import sys, os 
+def get_tesseract_path():
+    if getattr(sys, 'frozen', False):
+        base = os.path.dirname(sys.executable)
+        bundled = os.path.join(base, '_internal', 'tesseract', 'tesseract.exe')
+        if os.path.exists(bundled):
+            os.environ['TESSDATA_PREFIX'] = os.path.join(base, '_internal', 'tessdata')
+            return bundled
+    return r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+pytesseract.pytesseract.tesseract_cmd = get_tesseract_path()
 
 @dataclass
 class LineItem:

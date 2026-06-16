@@ -17,6 +17,7 @@ import os
 import pandas as pd
 
 
+
 @dataclass
 class LineItem:
     product_code: str

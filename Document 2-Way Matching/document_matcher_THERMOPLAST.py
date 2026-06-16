@@ -22,7 +22,26 @@ import os
 from pdf2image import convert_from_path
 import pytesseract
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+import sys, os
+def get_tesseract_path():
+    if getattr(sys, 'frozen', False):
+        base = os.path.dirname(sys.executable)
+        bundled = os.path.join(base, '_internal', 'tesseract', 'tesseract.exe')
+        if os.path.exists(bundled):
+            os.environ['TESSDATA_PREFIX'] = os.path.join(base, '_internal', 'tessdata')
+            return bundled
+    return r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+pytesseract.pytesseract.tesseract_cmd = get_tesseract_path()
+
+
+def get_poppler_path():
+    if getattr(sys, 'frozen', False):
+        base = os.path.dirname(sys.executable)
+        bundled = os.path.join(base, '_internal', 'poppler')
+        if os.path.exists(bundled):
+            return bundled
+    return r"C:\poppler\Library\bin"
 
 @dataclass
 class LineItem:
@@ -292,7 +311,7 @@ class DocumentMatcherGUI:
                 images = convert_from_path(
                 pdf_path,
                 dpi=400,
-                poppler_path=r"C:\poppler\Library\bin"
+                poppler_path=get_poppler_path()
             )
                 ocr_text = ""
 
