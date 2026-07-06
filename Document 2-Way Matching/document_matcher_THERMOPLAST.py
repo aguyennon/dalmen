@@ -484,7 +484,7 @@ class DocumentMatcherGUI:
             if re.match(r'^(WHITE|BLACK|MIX|FLEX|TAPE|BLUE|WORK-ORDER|BLEU)', line, re.IGNORECASE):
                 continue
 
-            code_match = re.match(r'^([A-Z]{0,2}\d+[\-\_A-Z0-9]*)', line, re.IGNORECASE)
+            code_match = re.match(r'^([A-Z]+\d+[\-\_A-Z0-9]*)', line, re.IGNORECASE)
             if code_match:
                 full_code = code_match.group(1).strip()
                 base_code = full_code.split('-')[0].split('_')[0]
@@ -536,15 +536,35 @@ class DocumentMatcherGUI:
 
     
     def lookup_thermoplast_price(self, base_code: str, suffix: str, unit: str) -> float:
+        candidates = []
+
+        for code, price in self.thermoplast_prices.items():
+            if not code.startswith(base_code):
+                continue
+
+            if suffix and f"-{suffix}-" not in code and not code.endswith(f"-{suffix}"):
+                continue
+
+            candidates.append((code, price))
+
+        if not candidates:
+            print(f" DEBUG: No candidates found for {base_code} suffix={suffix}")
+            return None
+        # If only one candidate
+        if len(candidates) == 1:
+            print(f" DEBUG: Matched {base_code} -> {candidates[0][0]} @ ${candidates[0][1]}")
+            return candidates[0][1]
+        # Narrow candidates but by unit
         unit_map = {"MPI": "MPI", "MPR": "MPR", "UNT": "PC"}
         pl_unit = unit_map.get(unit, unit)
 
-        for code, price in self.thermoplast_prices.items():
-            if (code.startswith(base_code) and
-                f"-{suffix}-" in code and 
-                code.endswith(f"-{pl_unit}")):
-                return price
-        return None
+        unit_matches = [(c, p) for c, p in candidates if c.endswith(f"-{pl_unit}")]
+        if unit_matches:
+            print(f" DEBUG: Matched {base_code} -> {unit_matches[0][0]} @ ${candidates[0][1]}")
+            return unit_matches[0][1]
+        # Last resort, return first candidate but just flag it
+        print(f" DEBUG: Fuzzy match {base_code} - > {candidates[0][0]} @ ${candidates[0][1]}")
+        return candidates[0][1]
 
 
     def calculate_similarity(self, str1: str, str2: str) -> float:
@@ -591,6 +611,8 @@ class DocumentMatcherGUI:
         used_matches  = set()
         price_check_ok = True
         any_price_checked = False
+        prices_passed = 0
+        prices_checked = 0
 
         for item1 in doc1.line_items:
             best_match = None
@@ -634,12 +656,15 @@ class DocumentMatcherGUI:
                         item1.item_code, suffix=suffix, unit=best_match.unit)
                     if list_price is not None:
                         any_price_checked = True
+                        prices_checked += 1
                         diff = abs(facture_price - list_price)
                         price_ok = diff <= 200
                         if not any_price_checked:
                             price_check_ok = True
                         elif not price_ok:
                             price_check_ok = False
+                        if price_ok:
+                            prices_passed += 1
                         status = "✅" if price_ok else "❌"
                         log.append(f"  💲 Facture: ${facture_price:.4f}  |  List: ${list_price:.4f}  |  Diff: ${diff:.2f}  {status}")
                     else:
@@ -699,6 +724,7 @@ class DocumentMatcherGUI:
             "po1": doc1.po_number,
             "po2": doc2.po_number,
             "price_check_ok": price_check_ok,
+            "price_ratio": f"{prices_passed}/{prices_checked}" if prices_checked > 0 else None,
             "is_confirmation": 'CONFIRMATION' in
                 self.extract_pdf_text(self.file2_path).upper() or
                 'ENTRY' in self.extract_pdf_text(self.file2_path).upper(),

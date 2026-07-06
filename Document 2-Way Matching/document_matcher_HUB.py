@@ -52,7 +52,7 @@ SUPPLIERS = {
         "complete": True,
     },
     "NOVATECH GLAZING + SLAB": {
-        "keywords": ["COMMANDE DE VITRAUX", "NOVATECH GLAZING", "COUPE-FEU", "ANNEXE PR"],
+        "keywords": ["COMMANDE DE VITRAUX", "NOVATECH GLAZING", "COUPE-FEU", "ANNEXE PR", "DECORATIVE LITES ORDER"],
         "module": "document_matcher_NOVAGLAZSLAB",
         "complete": True,
     },
@@ -816,9 +816,9 @@ class HubGUI:
         is_match   = bool(result.get("match", False))
 
         extras = {}
-        if "price_ok" in result and result["price_ok"] is not None:
-            extras["Price Check"] = "✅ Pass" if result["price_ok"] else "❌ Fail"
-        if "price_check_ok" in result:
+        if "price_ratio" in result and result["price_ratio"] is not None:
+            extras["Price Match"] = result["price_ratio"]
+        elif "price_check_ok" in result:
             if result["price_check_ok"] is not None \
                     and not result.get("is_confirmation", False):
                 extras["Price Match"] = \

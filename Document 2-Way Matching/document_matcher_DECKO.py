@@ -21,8 +21,13 @@ from collections import defaultdict
 import os
 from pdf2image import convert_from_path
 import pytesseract
+import sys, os
+from datetime import datetime
+from datetime import date
 
-import sys, os 
+from PDF_info_puller import pdf_path 
+
+
 def get_tesseract_path():
     if getattr(sys, 'frozen', False):
         base = os.path.dirname(sys.executable)
@@ -287,63 +292,80 @@ class DocumentMatcherGUI:
                     text += page_text + "\n"
         return text
 
+
+    def extract_pdf_date(self, text: str):
+        m = re.search(r'(\d{4}-\d{2}-\d{2})', text) # search for date
+        if m:  
+            return datetime.strptime(m.group(1), "%Y-%m-%d").date() # so if found, grab the data
+        return None
+        
     
-    def load_decko_price_list(self):
+    def load_decko_price_list(self, text: str):
         import pandas as pd
+
+        order_date = self.extract_pdf_date(text)
         try:
-            df = pd.read_excel(
-                r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\DECKO - PRODUITS DALMEN LTÉE.xlsx",
-                sheet_name="Liste de prix",
-                header=None
-            )
+            self.price_lists(order_date)
+        except Exception as e:
+            print(f"Failed to load any DECKO price lists: {e}")
 
-            size_cols = {}
-            for col_idx in range(7, 17):
-                val = str(df.iloc[5, col_idx]).strip()
-                if val and val != 'nan':
-                    size_cols[col_idx] = val
+    
+    def price_lists(self, order_date):
+        import pandas as pd
 
-            print(f" DEBUG DECKO price list: size columns = {size_cols}")
+        if order_date < date(2026, 7 ,1):
+            print("DEBUG: Using DECKO's old price list...")
+            path = r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\DECKO - PRODUITS DALMEN LTÉE.xlsx"
+        else:
+            print("DEBUG: Now using DECKO's new price list...")
+            path = r"\\10.0.7.2\Group\Taxi\2026 PRICE LIST\decko 1 Juillet.xlsx"
 
-            model_rows = {
-                "LÉGENDE 'S'": 6,
-                "CLASSIQUE 'S'": 7,
-                "CLASSIQUE 'C'": 8,
-                "JARDIN-PVC": 9,
-                "COMBO-PVC": 10,
-                "COMBO-PVC-PEINTURE": 12,
-                "COMBO-ALU": 14,
-                "HYBRIDE": 16,
-                "JARDIN-HYBRIDE": 18,
+        # logic for either options
+        excel_logic = pd.read_excel(path, sheet_name="Liste de prix", header=None)
+        size_cols = {}
+        for col_idx in range(7, 17):
+            val = str(excel_logic.iloc[5, col_idx]).strip()
+            if val and val != 'nan':
+                size_cols[col_idx] = val
+
+        print(f" DEBUG DECKO price list: size columns = {size_cols}")
+
+        model_rows = {
+            "LÉGENDE 'S'": 6,
+            "CLASSIQUE 'S'": 7,
+            "CLASSIQUE 'C'": 8,
+            "JARDIN-PVC": 9,
+            "COMBO-PVC": 10,
+            "COMBO-PVC-PEINTURE": 12,
+            "COMBO-ALU": 14,
+            "HYBRIDE": 16,
+            "JARDIN-HYBRIDE": 18,
             }
 
-            for model, row_idx in model_rows.items():
-                self.decko_prices[model] = {}
+        for model, row_idx in model_rows.items():
+            self.decko_prices[model] = {}
+            for col_idx, size_label in size_cols.items():
+                val = excel_logic.iloc[row_idx, col_idx]
+                try:
+                    self.decko_prices[model][size_label] = float(val)
+                except:
+                    self.decko_prices[model][size_label] = 0.0
+
+        option_rows = range(21, 52)
+        for row_idx in option_rows:
+            option_name = str(excel_logic.iloc[row_idx, 1]).strip()
+            if option_name and option_name != 'nan':
+                self.decko_options[option_name] = {}
                 for col_idx, size_label in size_cols.items():
-                    val = df.iloc[row_idx, col_idx]
+                    val = excel_logic.iloc[row_idx, col_idx]
                     try:
-                        self.decko_prices[model][size_label] = float(val)
+                        self.decko_options[option_name][size_label] = float(val)
                     except:
-                        self.decko_prices[model][size_label] = 0.0
+                        self.decko_options[option_name][size_label] = 0.0
 
-            option_rows = range(21, 52)
-            for row_idx in option_rows:
-                option_name = str(df.iloc[row_idx, 1]).strip()
-                if option_name and option_name != 'nan':
-                    self.decko_options[option_name] = {}
-                    for col_idx, size_label in size_cols.items():
-                        val = df.iloc[row_idx, col_idx]
-                        try:
-                            self.decko_options[option_name][size_label] = float(val)
-                        except:
-                            self.decko_options[option_name][size_label] = 0.0
-
-            print(f"Loaded {len(self.decko_prices)} DECKO models")
-            print(f"Loaded {len(self.decko_options)} DECKO options")
-            print(f"DEBUG all energetique keys: {[k for k in self.decko_options if 'NERG' in k.upper()]}")
-
-        except Exception as e:
-            print(f"Failed to load DECKO price list: {e}")
+        print(f"Loaded {len(self.decko_prices)} DECKO models")
+        print(f"Loaded {len(self.decko_options)} DECKO options")
+        print(f"DEBUG all energetique keys: {[k for k in self.decko_options if 'NERG' in k.upper()]}")
 
     
     def get_decko_size_col(self, text: str) -> str:
@@ -361,7 +383,6 @@ class DocumentMatcherGUI:
         if not footage_match:
             footage_match = re.search(r'\b([5-9]|10|12)\'', t)
         
-        
         footage = int(footage_match.group(1)) if footage_match else 6
         size_col = f"{footage}' {sash_count}L"
 
@@ -375,6 +396,7 @@ class DocumentMatcherGUI:
             c for c in unicodedata.normalize('NFD', text)
             if unicodedata.category(c) != 'Mn'
         )
+
 
     def calculate_decko_expected_price(self, text: str, include_moustiquaire: bool = False) -> tuple:
         t = text.upper()
@@ -650,7 +672,7 @@ class DocumentMatcherGUI:
                 "order1": doc1.order_number,
                 "order2": doc2.order_number,
                 "total1": expected_price,   # What we calculated from the PO + price list
-                "total2": facture_total,    # What the facture says
+                "total2": facture_total,    # What the facture says b
                 "total_diff": abs(expected_price - facture_total),
                 "configuration": doc1.fingerprint.configuration if doc1.fingerprint else "N/A",
                 "config_match": order_match,

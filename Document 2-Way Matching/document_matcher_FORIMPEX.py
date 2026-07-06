@@ -15,7 +15,9 @@ from difflib import SequenceMatcher
 import threading
 import pytesseract
 
-import sys, os 
+import sys, os
+
+from sympy.printing.pretty.pretty_symbology import line_width 
 def get_tesseract_path():
     if getattr(sys, 'frozen', False):
         base = os.path.dirname(sys.executable)
@@ -289,6 +291,8 @@ class DocumentMatcherGUI:
 
     def extract_order_number(self, text: str, doc_type: str) -> str:
         patterns = [
+            r'Numéro de PO\b.{0,200}?(?<!\d)(\d{4})(?!\d)',
+            r'COMMANDE CLIENT[^\n]*?(\d{4})(?!\d)\s*$',
             r'Bon de Commande\s*\n\s*#\s*(\d{5,})',
             r'#\s*(\d{5,6})\s*\n',
             r'NO DE COMMANDE\s+EXP[^\n]*\n[^\n]*\n\s*(\d{5,})',
@@ -300,6 +304,19 @@ class DocumentMatcherGUI:
             r'Bon de Commande\s*#?\s*(\d+)',
             r'(?<!\d)#\s*(\d{5,6})(?!\d)',
         ]
+
+        if 'Numéro de PO' in text or 'Numéro de PO' in text:
+            for num in re.findall(r'(?<!\d)(\d{4})(?!\d)', text):
+                if num not in {'5630', '2268', '3070', '1973', '8061'}:
+                    return num
+
+        commande_match = re.search(r'COMMANDE CLIENT[^\n]+', text, re.IGNORECASE)
+        if commande_match:
+            nums = re.findall(r'\b(\d{4})\b', commande_match.group(0))
+            blacklist = {'5630', '2268', '3070', '1973', '8061'}
+            for num in reversed(nums):
+                if num not in blacklist:
+                    return num
 
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
@@ -336,13 +353,16 @@ class DocumentMatcherGUI:
         if not code:
             return code
 
-        code = code.upper().strip().replace(' ', '')
-
-        # Strip ALL OCR junk letters between FX and the first digit (handles FxX532, FXX-5183, etc.)
+        # Strip OCR junk letters between FX and first digit
         code = re.sub(r'^FX[A-Z]+-?', 'FX-', code)
         code = re.sub(r'^FX(\d)', r'FX-\1', code)
 
-        # Extract just the numeric part after FX-
+        # Always extract exactly 3 digits as base code
+        m = re.match(r'^FX-(\d{3})', code)
+        if m:
+            return f"FX - {m.group(1)}"
+
+        # Fallback for shorter codes
         m = re.match(r'^FX-(\d+)', code)
         if m:
             return f"FX - {m.group(1)}"
@@ -366,20 +386,25 @@ class DocumentMatcherGUI:
         lines = text.split('\n')
         for i, line in enumerate(lines):
             line = line.strip().replace('¥', 'X')
+            line = re.sub(r'^(\d+)\?', lambda m: m.group(1), line) 
+            line = re.sub(r'(FX[\w]*)\?(\w)', lambda m: m.group(1) + '2' + m.group(2), line, flags=re.IGNORECASE)
+
+            if 'PACQUET' in line.upper() or 'PAQUET' in line.upper():
+                print(f" DEBUG cleaned line: '{line}'")
 
             match1 = re.match(
-                r'^(\d+)\s+(?:PAQUETS?|BOITES?|BOITE)\s+DE\s+(FX[A-Z]*-?[\d][\w\-]*)\s+(.+)$',
+                r'^(\d+)\s+(?:PACQUETS?|PAQUETS?|BOITES?|BOITE)\s+DE\s+(FX[A-Z]*-?[\d][\w\-]*)(?:\s+(.+))?$',
                 line, re.IGNORECASE
             )
             match2 = re.match(
-                r'^(?:PAQUETS?|BOITES?|BOITE)\s+DE\s+(FX[A-Z]*-?[\d][\w\-]*)',
+                r'^(?:PACQUETS?|PAQUETS?|BOITES?|BOITE)\s+DE\s+(FX[A-Z]*-?[\d][\w\-]*)',
                 line, re.IGNORECASE
             )
 
             if match1:
                 quantity = int(match1.group(1))
                 product_code = match1.group(2)
-                description = line
+                description = match1.group(3).strip() if match1.group(3) else ""
             elif match2:
                 product_code = match2.group(1)
                 description = line
@@ -435,6 +460,14 @@ class DocumentMatcherGUI:
                                         qty_col = ci
                                     if 'DESCRIPTION' in cell:
                                         desc_col = ci
+                                
+                                is_rapport = any('CODE' in c or 'PIÈCE' in c for c in row_upper if c)
+                                if is_rapport and qty_col is None:
+                                    qty_col = 2
+                                    desc_col = 1
+                                    code_col = 0
+                                    print(f" [TABLE] Rapport de commande format detected")
+
                                 if qty_col is not None:
                                     print(f"  [TABLE] Page {page_num+1}: qty_col={qty_col}, desc_col={desc_col}")
                                 continue
@@ -445,9 +478,33 @@ class DocumentMatcherGUI:
                             if effective_desc_col >= len(row):
                                 continue
 
+                            code_col = locals().get('code_col')
+                            if code_col is not None and code_col < len(row):
+                                code_cell = str(row[code_col] or "").strip()
+                                fx_in_code = re.search(r'(FX[\w\-]+)', code_cell, re.IGNORECASE)
+                                if fx_in_code:
+                                    product_code = fx_in_code.group(1)
+                                    normalized_code = self.normalize_forimpex_code(product_code)
+                                    desc_cell = str(row[effective_desc_col] or "").strip() if effective_desc_col < len(row) else ""
+                                    qty_cell = str(row[effective_qty_col] or "").strip() if effective_qty_col < len(row) else ""
+                                    try:
+                                        quantity = int(qty_cell)
+                                    except:
+                                        quantity = 0
+                                    print(f" [TABLE] Rapport: {product_code} (norm: {normalized_code}) | Qty: {quantity}")
+                                    items.append(LineItem(
+                                        product_code=normalized_code,
+                                        description=desc_cell,
+                                        quantity=quantity,
+                                        raw_code=product_code,
+                                    ))
+                                    continue
+
                             desc_cell = str(row[effective_desc_col] or "").strip().replace('¥', 'X')
 
-                            if not re.search(r'(?:PAQUETS?|BOITES?|BOITE)\s+DE\s+FX', desc_cell, re.IGNORECASE):
+                            has_paquets = re.search(r'(?:PAQUETS?|BOITES?|BOITE)\s+DE\s+FX', desc_cell, re.IGNORECASE)
+                            has_fx_direct = re.search(r'FX[\w\-]+', desc_cell, re.IGNORECASE)
+                            if not has_paquets and not has_fx_direct:
                                 continue
 
                             qty_cell = str(row[effective_qty_col] or "").strip() if effective_qty_col < len(row) else ""
@@ -484,51 +541,87 @@ class DocumentMatcherGUI:
 
         print(f"DEBUG: Parsing Forimpex confirmation...")
 
-        in_table = False
+        is_new_format = "CODE D'ITEM" in text or "QTÉ COMM" in text or "QTE COMM" in text or (
+            "COMMANDE CLIENT" in text and "NO D'INVENTAIRE" not in text
+        )
+        print(f"DEBUG: Confirmation format: {'New (Rapport)' if is_new_format else 'Classic (NO D INVENTAIRE)'}")
 
-        for i, line in enumerate(lines):
-            line = line.strip()
+        if is_new_format:
+            in_table = False
+            for i, line in enumerate(lines):
+                line = line.strip()
 
-            if "NO D'INVENTAIRE" in line or "NO D\'INVENTAIRE" in line:
-                in_table = True
-                print(f" Found table at line {i}")
-                print(f"DEBUG: Next 10 lines after table header:")
-                for j in range(i+1, min(i+11, len(lines))):
-                    print(f" Line {j}: {lines[j][:100]}")
-                continue
+                if "CODE D'ITEM" in line or "QTÉ COMM" in line or "QTE COMM" in line:
+                    in_table = True
+                    continue
 
-            if not in_table:
-                continue
-            
-            if re.match(r'^FX[\d\-]+', line):
-                print(f" DEBUG: Found FX line at {i}: {line[:100]}")
-                parts = line.split(None, 1)
-                if len(parts) >= 2:
-                    product_code = parts[0].strip()
-                    rest = parts[1].strip()
+                if not in_table or not line:
+                    continue
 
-                    desc_match = re.match(r'^(.+?)\s+\d{4}-\d{2}-\d{2}', rest)
-                    if desc_match:
-                        description = desc_match.group(1).strip()
-                    else:
-                        description = rest
-                        
-                    qty_match = re.search(r'\d{4}-\d{2}-\d{2}\s+(\d+)\.00', line)
-                    if qty_match:
-                        quantity = int(qty_match.group(1))
-                    else:
-                        quantity = 1
-
+                code_match = re.match(
+                    r'^(\d+)\s+(FX[\w\-]+)\s+(.+?)\s+\d{2}/\d{2}/\d{4}',
+                    line, re.IGNORECASE
+                )
+                if code_match:
+                    quantity = int(code_match.group(1))
+                    product_code = code_match.group(2)
+                    description = code_match.group(3).strip()
                     normalized_code = self.normalize_forimpex_code(product_code)
 
-                    print(f"Found: {product_code} (normalized: {normalized_code}) | Qty: {quantity} | DESC: {description[:50]}")
+                    print(f"  Found: {product_code} (normalized: {normalized_code}) | Qty: {quantity}")
 
                     items.append(LineItem(
                         product_code=normalized_code,
                         description=description,
-                        quantity=quantity
+                        quantity=quantity,
+                        raw_code=product_code
                     ))
- 
+        else:
+            in_table = False
+
+            for i, line in enumerate(lines):
+                line = line.strip()
+
+                if "NO D'INVENTAIRE" in line or "NO D\'INVENTAIRE" in line:
+                    in_table = True
+                    print(f" Found table at line {i}")
+                    print(f"DEBUG: Next 10 lines after table header:")
+                    for j in range(i+1, min(i+11, len(lines))):
+                        print(f" Line {j}: {lines[j][:100]}")
+                    continue
+
+                if not in_table:
+                    continue
+                
+                if re.match(r'^FX[\d\-]+', line):
+                    print(f" DEBUG: Found FX line at {i}: {line[:100]}")
+                    parts = line.split(None, 1)
+                    if len(parts) >= 2:
+                        product_code = parts[0].strip()
+                        rest = parts[1].strip()
+
+                        desc_match = re.match(r'^(.+?)\s+\d{4}-\d{2}-\d{2}', rest)
+                        if desc_match:
+                            description = desc_match.group(1).strip()
+                        else:
+                            description = rest
+                            
+                        qty_match = re.search(r'\d{4}-\d{2}-\d{2}\s+(\d+)\.00', line)
+                        if qty_match:
+                            quantity = int(qty_match.group(1))
+                        else:
+                            quantity = 1
+
+                        normalized_code = self.normalize_forimpex_code(product_code)
+
+                        print(f"Found: {product_code} (normalized: {normalized_code}) | Qty: {quantity} | DESC: {description[:50]}")
+
+                        items.append(LineItem(
+                            product_code=normalized_code,
+                            description=description,
+                            quantity=quantity
+                        ))
+    
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
 
@@ -607,14 +700,14 @@ class DocumentMatcherGUI:
         text = self.extract_pdf_text(pdf_path)
 
         if not doc_type:
-            if "FACTURE" in text:
-                doc_type = "FORIMPEX_FACTURE"
-            elif "Forimpex" in text or "Saint-Joseph-de-Beauce" in text:
-                doc_type = "FORIMPEX"
-            elif "Dalmen Portes" in text or "Purchase Order" in text or "Bon de Commande" in text:
+            if "Dalmen Portes" in text or "Purchase Order" in text or "Bon de Commande" in text or "Rapport de commande" in text:
                 doc_type = "DALMEN"
+            elif "FACTURE" in text.upper():
+                doc_type = "FORIMPEX_FACTURE"
+            elif "FORIMPEX" in text.upper() or "SAINT-JOSEPH-DE-BEAUCE" in text.upper():
+                doc_type = "FORIMPEX"
             else:
-                doc_type = "DALMEN"  # default assumption if pdfplumber got nothing
+                doc_type = "DALMEN"
 
         print(f"DEBUG: Detected document type: {doc_type}")
 
@@ -744,19 +837,22 @@ class DocumentMatcherGUI:
                         if kw1 & finish & kw2:
                             score += 10
 
+                    if item1.quantity > 0 and item2.quantity > 0 and item1.quantity == item2.quantity:
+                        score += 15
+
                     if score > best_score:
                         best_score = score
                         best_match = item2
 
                 log.append("")
-                result_str = "✅ MATCH" if best_match and best_score >= 70 else "❌ NO MATCH"
+                result_str = "✅ MATCH" if best_match and best_score >= 60 else "❌ NO MATCH"
                 sim_str    = f"(Score: {best_score}/100)"
 
                 if best_match:
                     log.append(f"  {item1.product_code:<20}  →  {best_match.product_code:<20}  {sim_str:<18}  {result_str}")
                     log.append(f"  PO Qty: {item1.quantity} paquets   |   Shipped: {best_match.quantity} units")
 
-                    if best_score >= 70:
+                    if best_score >= 60:
                         matched += 1
                         if facture_mode and best_match.quantity > 0:
                             facture_full_code = best_match.raw_code.upper() if best_match.raw_code else ""

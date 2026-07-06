@@ -256,7 +256,7 @@ namespace PurchaseOrder
                 cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, "Unit of Measure", xUom, tableTopY + 10, 0);
                 cb.EndText();
 
-                for (int i = 1; i <= 8; i++)
+                for (int i = 1; i <= 11; i++)
                 {
                     float yPosition = tableTopY - (i * rowHeight);
 
@@ -323,6 +323,9 @@ namespace PurchaseOrder
             tbxQty6.Text = "";
             tbxQty7.Text = "";
             tbxQty8.Text = "";
+            tbxQty9.Text = "";
+            tbxQty10.Text = "";
+            tbxQty11.Text = "";
 
             tbxDesc1.Text = "";
             tbxDesc2.Text = "";
@@ -332,6 +335,9 @@ namespace PurchaseOrder
             tbxDesc6.Text = "";
             tbxDesc7.Text = "";
             tbxDesc8.Text = "";
+            tbxDesc9.Text = "";
+            tbxDesc10.Text = "";
+            tbxDesc11.Text = "";
 
             tbxUOM1.Text = "";
             tbxUOM2.Text = "";
@@ -341,6 +347,9 @@ namespace PurchaseOrder
             tbxUOM6.Text = "";
             tbxUOM7.Text = "";
             tbxUOM8.Text = "";
+            tbxUOM9.Text = "";
+            tbxUOM10.Text = "";
+            tbxUOM11.Text = "";
 
         }
 

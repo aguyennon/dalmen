@@ -40,7 +40,6 @@ class DocumentMatcherGUI:
         self.root.geometry("700x600")
         self.root.resizable(False, False)
         
-        # Configure colors
         self.bg_color = "#f0f0f0"
         self.primary_color = "#667eea"
         self.success_color = "#4caf50"
@@ -48,12 +47,10 @@ class DocumentMatcherGUI:
         
         self.root.configure(bg=self.bg_color)
         
-        # File paths
         self.file1_path = None
         self.file2_path = None
         self.match_log = ""
         
-        # Create UI
         self.create_widgets()
 
     def show_log_window(self):
@@ -100,90 +97,90 @@ class DocumentMatcherGUI:
 
 
     def parse_dalmen_confirmation(self, text_lines):
-    
         items = []
-    
-        # If text_lines is a string, split it into lines
+        current_code = None
+
         if isinstance(text_lines, str):
             text_lines = text_lines.split('\n')
-        
+
         print(f"\nDEBUG: Parsing Dalmen confirmation - {len(text_lines)} lines")
-        
+
         for i, line in enumerate(text_lines):
-            # Strip whitespace for cleaner processing
             line = line.strip()
-            
-            # Skip empty lines
             if not line:
                 continue
-            
-            # Skip header/footer/summary lines
+
             skip_keywords = [
-                'ORDER CONFIRMATION',
-                'Customer #',
-                'Customer name',
-                'Customer PO#',
-                'Confirmation date',
-                'Richelieu',
-                'QTY ITEM U/M',
-                'DESCRIPTION',
-                'COST',
-                'Sous-total',
-                'Freight',
-                'GST',
-                'PST',
-                'www.lionhardware.com',
-                'St-Jacques',
-                '24 rue',
-                'E7B',
-                'PH:',
-                'Fax:',
-                'BO'
+                'ORDER CONFIRMATION', 'Customer #', 'Customer name',
+                'Customer PO#', 'Confirmation date', 'Richelieu',
+                'QTY ITEM U/M', 'DESCRIPTION', 'COST',
+                'Sous-total', 'Freight', 'GST', 'PST',
+                'www.lionhardware.com', 'St-Jacques', '24 rue',
+                'E7B', 'PH:', 'Fax:',
             ]
-            
-            # Check if line should be skipped
-            should_skip = False
-            for keyword in skip_keywords:
-                if keyword in line:
-                    should_skip = True
-                    break
-            
-            if should_skip:
+
+            if any(keyword in line for keyword in skip_keywords):
                 continue
-            
-            # Skip lines that start with "Total" (but not header row)
+
             if line.startswith('Total'):
                 continue
-            
-            # Pattern: QUANTITY ITEM_CODE U/M DESCRIPTION UNIT_PRICE $TOTAL
+
             pattern = r'^(\d+)\s+(?:\w+\s+)?(TH\d+)\s+\w+\s+(.+?)\s+([\d.]+)\s+\$?([\d,]+\.?\d*)$'
-            
             match = re.match(pattern, line)
-            
+
+            if not match:
+                pattern_nototal = r'^(\d+)\s+(?:\w+\s+)?(TH\d+)\s+\w+\s+(.+?)\s+([\d.]+)\s*$'
+                nototal_match = re.match(pattern_nototal, line)
+                if nototal_match:
+                    qty          = int(nototal_match.group(1))
+                    item_code    = nototal_match.group(2)
+                    unit_price   = float(nototal_match.group(4))
+                    total        = 0.0
+                    current_code = item_code
+                    print(f"  ⚠ Qty=0 item registered: {item_code} (awaiting BO line)")
+                    items.append(LineItem(
+                        product_code=item_code,
+                        quantity=float(qty),
+                        unit_price=unit_price,
+                        total=total
+                    ))
+                    continue
+
             if match:
-                # Extract the matched groups
-                qty = int(match.group(1))           # "3861"
-                item_code = match.group(2)          # "TH2390593"
-                description = match.group(3)        # "KEEPER MP NON-HANDED"
-                unit_price = float(match.group(4))  # "0.7200"
-                total = float(match.group(5).replace(',', ''))  # "2779.92"
-                
-                print(f"  ✓ Found [Dalmen]: {item_code} qty={qty} total=${total:.2f}")
-                
-                # Create LineItem object
+                qty          = int(match.group(1))
+                item_code    = match.group(2)
+                unit_price   = float(match.group(4))
+                total        = float(match.group(5).replace(',', ''))
+                current_code = item_code
+
+                if qty == 0 or total == 0:
+                    print(f"  ⚠ Qty=0 item registered: {item_code} (awaiting BO line)")
+                else:
+                    print(f"  ✓ Found [Dalmen]: {item_code} qty={qty} total=${total:.2f}")
+
                 items.append(LineItem(
                     product_code=item_code,
                     quantity=float(qty),
                     unit_price=unit_price,
                     total=total
                 ))
-            else:
-                # Only log if line has TH code (potential item that didnt match)
-                if 'TH' in line and len(line) > 20:
-                    print(f"  ✗ Dalmen line didn't match: {line[:50]}...")
-        
+                continue
+
+            bo_pattern = r'^(\d+)\s+BO\s+.+?\s+([\d.]+)\s+\$?([\d,]+\.?\d*)$'
+            bo_match = re.match(bo_pattern, line)
+            if bo_match and current_code:
+                extra_qty   = float(bo_match.group(1))
+                extra_total = float(bo_match.group(3).replace(',', ''))
+                for item in reversed(items):
+                    if item.product_code == current_code:
+                        item.quantity += extra_qty
+                        item.total    += extra_total
+                        print(f"  ✓ Added BO line: +${extra_total:.2f} to {current_code}")
+                        break
+            elif 'TH' in line and len(line) > 20:
+                print(f"  ✗ Dalmen line didn't match: {line[:50]}...")
+
         print(f"DEBUG: Total Dalmen items extracted: {len(items)}")
-        
         return items
 
 
@@ -205,7 +202,6 @@ class DocumentMatcherGUI:
             messagebox.showinfo("Print", "Document sent to printer!")
         except Exception as e:
             messagebox.showerror("Print Error", f"Failed to print: {str(e)}")
-            
 
 
     def create_widgets(self):
@@ -298,7 +294,6 @@ class DocumentMatcherGUI:
         if filename:
             if file_num == 1:
                 self.file1_path = filename
-                # Handle both forward and backslash
                 display_name = filename.replace('\\', '/').split('/')[-1]
                 self.file1_label.config(
                     text=f"✓ {display_name}",
@@ -312,7 +307,6 @@ class DocumentMatcherGUI:
                     fg=self.success_color
                 )
             
-            # Enable compare button if both files selected
             if self.file1_path and self.file2_path:
                 self.compare_btn.config(state=tk.NORMAL)
 
@@ -347,7 +341,6 @@ class DocumentMatcherGUI:
             self.root.after(0, self.display_error, f"{str(e)}\n\n{error_details}")
     
     def extract_text_from_pdf(self, pdf_path: str) -> str:
-        """Extract all text from PDF"""
         text = ""
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
@@ -362,17 +355,13 @@ class DocumentMatcherGUI:
             code = 'TH' + code
         return code
 
-    
     def lion_codes_match(self, code1: str, code2: str) -> bool:
         c1 = self.normalize_lion_code(code1)
         c2 = self.normalize_lion_code(code2)
-
         return c1.startswith(c2) or c2.startswith(c1)
 
-    
     def extract_order_number(self, text: str) -> str:
-        print(f"DEBUG order number text:\n{text[:500]}") 
-        """Extract order number"""
+        print(f"DEBUG order number text:\n{text[:500]}")
         patterns = [
             r'N[°o]\s*COMMANDE\s+DU\s+CLIENT\s*[\n\r]+\s*(\d+)',
             r'CUSTOMER\s*ORDER\s*NO\.?\s*[\n\r]+\s*(\d+)',
@@ -395,7 +384,6 @@ class DocumentMatcherGUI:
         return "Undetected"
     
     def extract_total(self, text: str) -> float:
-        """Extract document total"""
         patterns = [
             r'Total\s*:\s*([\d\s,\.]+)\s*\$',
             r'Total\s+([\d\s,\.]+)\s+CAD',
@@ -412,25 +400,21 @@ class DocumentMatcherGUI:
         return 0.0
     
     def extract_line_items(self, text: str) -> List[LineItem]:
-        """Extract line items from document"""
         items = []
         lines = text.split('\n')
         
         print(f"\nDEBUG: Parsing {len(lines)} lines")
         
-        # Join lines that are continuations (like "CL-PB-350187-" + "BK")
         cleaned_lines = []
         i = 0
         while i < len(lines):
             line = lines[i].strip()
-            # If line ends with hyphen and next line exists
             if line.endswith('-') and i + 1 < len(lines):
                 next_line = lines[i + 1].strip()
-                # If next line is short (< 20 chars) and alphanumeric, join them
                 if len(next_line) < 20 and next_line and not re.search(r'[\$,\.]', next_line):
                     print(f"  DEBUG: Joining '{line}' + '{next_line}'")
                     line = line + next_line
-                    i += 1  # Skip next line
+                    i += 1
             cleaned_lines.append(line)
             i += 1
         
@@ -439,13 +423,11 @@ class DocumentMatcherGUI:
         for line in cleaned_lines:
             line = line.strip()
             
-            # PATTERN 1: Same format as FIT 
             m1 = re.match(r'^(\d+\s+)?\[([A-Z0-9\-\s\(\)]+)\]', line)
             if m1:
                 product_code = m1.group(2).strip()
                 total = None
                 
-                # Look in the NEXT 10 lines only (not all cleaned_lines)
                 line_idx = cleaned_lines.index(line)
                 for j in range(line_idx, min(line_idx + 10, len(cleaned_lines))):
                     pm = re.search(r'([\d\s,\.]+)\s+CAD', cleaned_lines[j])
@@ -455,7 +437,7 @@ class DocumentMatcherGUI:
                             t = float(val)
                             if t > 1:
                                 total = t
-                                break  # Stop at first valid total
+                                break
                         except:
                             pass
                 
@@ -469,21 +451,15 @@ class DocumentMatcherGUI:
                     ))
                     continue
             
-            # PATTERN 2: Dalmen format - everything on one line
-            # Look for: CODE (anything with dashes) then description with prices
-            # Pattern: starts with LETTERS-NUMBERS and has two $ signs
             if re.search(r'\d+\.\d+\s*\$\s+[\d\s,\.]+\s*\$', line):
-                # Line has the price pattern, try to extract code
                 code_match = re.match(r'^([A-Z0-9\-]+)', line)
                 if code_match:
                     raw_code = code_match.group(1).strip()
-                    # Clean up trailing hyphens and spaces
                     product_code = raw_code.rstrip('-').strip()
                     
-                    # Extract the final price (last $ amount)
                     prices = re.findall(r'([\d\s,\.]+)\s*\$', line)
                     if prices and len(prices) >= 2:
-                        total_str = prices[-1]  # Last price is the total
+                        total_str = prices[-1]
                         
                         try:
                             total = float(total_str.replace(' ', '').replace(',', '.'))
@@ -499,7 +475,6 @@ class DocumentMatcherGUI:
                         except:
                             pass
             elif re.match(r'^[A-Z]', line) and '$' in line:
-                # Debug: Show lines that look like they should match but dont
                 print(f"  DEBUG: Dalmen line didn't match: {line[:60]}...")
         
         print(f"DEBUG: Total items extracted: {len(items)}\n")
@@ -537,18 +512,13 @@ class DocumentMatcherGUI:
         return items
     
     def parse_document(self, pdf_path: str) -> OrderDocument:
-    
-        # Extract text from PDF
         full_text = self.extract_text_from_pdf(pdf_path)
         text_lines = full_text.split('\n')
         
-        # Extract order number and total
         order_number = self.extract_order_number(full_text)
         total = self.extract_total(full_text)
         
-        # Detect document type - BE MORE LENIENT**
         full_text_upper = full_text.upper()
-        
 
         print(f"DEBUG: Checking document type...")
         print(f"  Contains 'DALMEN': {'DALMEN' in full_text_upper}")
@@ -585,7 +555,6 @@ class DocumentMatcherGUI:
             print("⚠ WARNING: Unknown document type, using standard parser")
             line_items = self.extract_line_items(full_text)
         
-        # ALWAYS return OrderDocument, never return dict
         doc = OrderDocument(
             order_number=order_number,
             line_items=line_items,
@@ -594,30 +563,25 @@ class DocumentMatcherGUI:
         doc.is_facture = is_lion_facture
         return doc
 
-    
     def normalize_code(self, code: str) -> str:
-        """Normalize product code"""
         code = code.upper()
-        code = re.sub(r'\(.*?\)', '', code)  # Remove parentheses
-        code = re.sub(r'\s+', '', code)  # Remove spaces
-        code = re.sub(r'^CL-', '', code)  # Remove CL- prefix
+        code = re.sub(r'\(.*?\)', '', code)
+        code = re.sub(r'\s+', '', code)
+        code = re.sub(r'^CL-', '', code)
         return code.strip()
     
     def calculate_similarity(self, str1: str, str2: str) -> float:
-        """Calculate string similarity"""
         return SequenceMatcher(None, str1.lower(), str2.lower()).ratio()
     
     def base_code(self, code: str) -> str:
-        """Get base product code (first part before space)"""
         return code.split()[0] if code else code
     
     def aggregate(self, items):
-        """Aggregate items by base code"""
         agg = defaultdict(lambda: {"total": 0.0, "label": ""})
         for i in items:
             key = self.base_code(i.product_code)
             agg[key]["total"] += i.total
-            if not agg[key]["label"]:  # Keep first label seen
+            if not agg[key]["label"]:
                 agg[key]["label"] = i.product_code
         return agg
 
@@ -627,7 +591,6 @@ class DocumentMatcherGUI:
         agg1 = self.aggregate(doc1.line_items)
         agg2 = self.aggregate(doc2.line_items)
 
-        # ── SUMMARY ───────────────────────────────────────────────────────
         log.append("=" * 60)
         log.append("SUMMARY")
         log.append("=" * 60)
@@ -644,7 +607,6 @@ class DocumentMatcherGUI:
             right = f"  {keys2[i][1]['label']}: ${keys2[i][1]['total']:.2f}" if i < len(keys2) else ""
             log.append(f"{left:<{col_width}}  {right}")
 
-       # ── MATCHING PROCESS ──────────────────────────────────────────────
         log.append("")
         log.append("=" * 60)
         log.append("MATCHING PROCESS")
@@ -688,10 +650,10 @@ class DocumentMatcherGUI:
                 continue
 
             scored += 1
-            threshold    = max(5.0, total1 * 0.15)
-            matched_this = best_diff < threshold
-
             is_facture = hasattr(doc2, 'is_facture') and doc2.is_facture
+            threshold    = max(5.0, total1 * 0.15)
+            matched_this = best_diff < threshold if is_facture else True
+
             if is_facture and total1 > 0:
                 price_diff_pct = abs(total1 - best_match_total) / total1 * 100
                 price_ok = price_diff_pct <= 15
@@ -711,7 +673,6 @@ class DocumentMatcherGUI:
             if matched_this:
                 matched += 1
 
-        # ── FINAL RESULT ──────────────────────────────────────────────────
         match_percentage = (matched / scored * 100) if scored > 0 else 0
         documents_match  = match_percentage >= 70
 
@@ -788,7 +749,7 @@ class DocumentMatcherGUI:
         stat_box(stats, "PO Numbers", f"{order_icon}  {result['order1']} / {result['order2']}", 0)
         stat_box(stats, "Items Matched", f"{result['matched_items']} / {result['total_items']}", 1)
         stat_box(stats, "Confidence", f"{result['confidence']:.1f}%", 2)
-        price_ok = result['confidence'] >= 70 
+        price_ok = result['confidence'] >= 70
         stat_box(stats, "Price Check", "✅" if price_ok else "❌", 3)
 
         tk.Button(inner, text="📋  View Detailed Log", font=("Arial", 10, "bold"),
@@ -796,10 +757,7 @@ class DocumentMatcherGUI:
                 command=self.show_log_window, relief=tk.FLAT,
                 padx=18, pady=9).pack(fill=tk.X)
 
-    
-    
     def display_error(self, error_msg):
-        """Display error message"""
         self.progress.stop()
         self.progress.pack_forget()
         self.compare_btn.config(state=tk.NORMAL)
@@ -818,4 +776,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

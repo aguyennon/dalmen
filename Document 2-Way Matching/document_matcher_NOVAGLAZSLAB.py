@@ -244,6 +244,21 @@ class DocumentMatcherGUI:
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + "\n"
+
+        if len(text.strip()) < 100:
+            print("DEBUG: PDF appears image-based, running OCR fallback...")
+            text = self._ocr_pdf(pdf_path)
+
+        return text
+
+    def _ocr_pdf(self, pdf_path: str) -> str:
+        from pdf2image import convert_from_path
+        poppler_path = r"C:\poppler\Library\bin"
+        text = ""
+        images = convert_from_path(pdf_path, dpi=400, poppler_path=poppler_path)
+        for i, img in enumerate(images):
+            print(f"DEBUG: OCR page {i+1}/{len(images)}...")
+            text += pytesseract.image_to_string(img, config='--psm 1') + "\n"
         return text
     
     def extract_order_number(self, text: str, doc_type: str) -> str:
@@ -264,47 +279,26 @@ class DocumentMatcherGUI:
     
     def parse_glaze_dalmen_order(self, text: str, target_po: str) -> List[LineItem]:
         items = []
-        lines = text.split('\n')
+        lines = [l.strip() for l in text.split('\n')]
 
         print(f"\nDEBUG: Parsing Dalmen order...")
 
+        is_decorative_lites = "Decorative lites order" in text or "Item number :" in text
+        print(f"DEBUG: Format detected: {'Decorative lites (English)' if is_decorative_lites else 'Standard French'}")
+
         for i, line in enumerate(lines):
-            line = line.strip()
 
-            match1 = re.match(r'^([\d\-]+)\s+(\d+)\s+([\d\-]+)\s+(.+)$', line)
-            if match1:
-                product_code = match1.group(1).strip()
-                quantity = int(match1.group(2))
-                annexe_pr = match1.group(3).strip()
-                description = match1.group(4).strip()
-                desc_clean = re.sub(r'^[\d\-]+\s*-\s*', '', description)
+            if is_decorative_lites:
+                match = re.match(r'^(\d{2}-\d{3}-\d{3}-\w+)\s+(\d+)\s+([\d][\d\-]+-\d+)$', line)
+                if not match:
+                    continue
 
-                print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {desc_clean[:50]}")
+                product_code = match.group(1)
+                quantity = int(match.group(2))
+                annexe_pr = match.group(3)
+                description = lines[i - 1] if i > 0 else ""
 
-                items.append(LineItem(
-                    product_code=product_code,
-                    annexe_pr=annexe_pr,
-                    description=desc_clean,
-                    quantity=quantity
-                ))
-                continue
-
-            match2 = re.match(r'^([\d\-]+)\s+(\d+)\s+([\d\-]+)$', line)
-            if match2:
-                product_code = match2.group(1).strip()
-                quantity = int(match2.group(2))
-                annexe_pr = match2.group(3).strip()
-
-                description = ""
-                if i > 0:
-                    prev_line = lines[i-1].strip()
-                    if prev_line.startswith(product_code):
-                        description = re.sub(r'^[\d\-]+\s*-\s*', '', prev_line)
-
-                if not description:
-                    description = f"{product_code} (no description found)"
-
-                print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
+                print(f"  Found: {product_code} | Annexe: {annexe_pr} | Qty: {quantity} | DESC: {description[:50]}")
 
                 items.append(LineItem(
                     product_code=product_code,
@@ -312,6 +306,68 @@ class DocumentMatcherGUI:
                     description=description,
                     quantity=quantity
                 ))
+
+            else:
+                match1 = re.match(r'^([\d\-]+)\s+(\d+)\s+([\d\-]+)\s+(.+)$', line)
+                if match1:
+                    product_code = match1.group(1).strip()
+                    quantity = int(match1.group(2))
+                    annexe_pr = match1.group(3).strip()
+                    description = match1.group(4).strip()
+                    desc_clean   = re.sub(r'^[\d\-]+\s*-\s*', '', description)
+
+                    print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {desc_clean[:50]}")
+
+                    items.append(LineItem(
+                        product_code=product_code,
+                        annexe_pr=annexe_pr,
+                        description=desc_clean,
+                        quantity=quantity
+                    ))
+                    continue
+
+                # Other page format
+                match2 = re.match(r'^([\d\-]+)\s+(\d+)\s+([\d\-]+)\s+(.+)$', line)
+                if match2:
+                    product_code = match2.group(1).strip()
+                    quantity = int(match2.group(2))
+                    annexe_pr = match2.group(3).strip()
+                    description = match2.group(4).strip()
+                    desc_clean = re.sub(r'^[\d\-]+\s*-\s*', '', description)
+
+                    print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {desc_clean[:50]}")
+
+                    items.append(LineItem(
+                        product_code=product_code,
+                        annexe_pr=annexe_pr,
+                        description=desc_clean,
+                        quantity=quantity
+                    ))
+                    continue
+
+                match3 = re.match(r'^([\d\-]+)\s+(\d+)\s+([\d\-]+)$', line)
+                if match3:
+                    product_code = match3.group(1).strip()
+                    quantity = int(match3.group(2))
+                    annexe_pr = match3.group(3).strip()
+
+                    description = ""
+                    if i > 0:
+                        prev_line = lines[i-1].strip()
+                        if prev_line.startswith(product_code):
+                            description = re.sub(r'^[\d\-]+\s*-\s*', '', prev_line)
+
+                    if not description:
+                        description = f"{product_code} (no description found)"
+
+                    print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
+
+                    items.append(LineItem(
+                        product_code=product_code,
+                        annexe_pr=annexe_pr,
+                        description=description,
+                        quantity=quantity
+                    ))
 
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
@@ -412,33 +468,99 @@ class DocumentMatcherGUI:
     def parse_glaze_novatech_confirmation(self, text: str, target_po: str) -> List[LineItem]:
         """Parse Novatech confirmation (handles multi-page)"""
         items = []
-        lines = text.split('\n')
+        lines = [l.strip() for l in text.split('\n')]
+
+        print("DEBUG: Full OCR line dump:")
+        for idx, l in enumerate(lines):
+            if l:
+                print(f"[{idx}] {l}")
         
         print(f"\nDEBUG: Parsing Novatech confirmation...")
 
-        for i, line in enumerate(lines):
-            line = line.strip()
+        is_ocr_format = any(re.search(r'Annexe PR:', l) for l in lines)
+        print(f"DEBUG: Confirmation format: {'OCR/Scanned' if is_ocr_format else 'Text-based'}")
 
-            match = re.search(r'V-\d+\s+[\d\.]+\s+\d+\s+([\d\-]+)\s+(.+?)(?:\d{4}-\d{2}-\d{2}|$)', line)
-            if match:
-                product_code = match.group(1).strip()
-                description = match.group(2).strip()
+        if is_ocr_format:
+            for i, line in enumerate(lines):
+                annexe_match = re.search(r'Annexe PR:\s*([\d\-]+)', line)
+                if not annexe_match:
+                    continue
 
-                annexe_pr = ""
-                for j in range(i+1, min(i+6, len(lines))):
-                    annexe_match = re.search(r'Annexe PR:\s*([\d\-]+)', lines[j])
-                    if annexe_match:
-                        annexe_pr = annexe_match.group(1)
+                annexe_pr = annexe_match.group(1).strip()
+
+                product_code = ""
+
+                for j in range(i - 1, max(i - 6, -1), -1):
+                    code_match = re.match(r'^(\d{2}-\d{3}-\d{3}-\d{3})$', lines[j])
+                    if code_match:
+                        product_code = code_match.group(1)
                         break
 
-                print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
+                if not product_code:
+                    for j in range(i + 1, min(i + 4, len(lines))):
+                        code_match = re.search(r'(\d{2}-\d{3}-\d{3}-\d{3})', lines[j])
+                        if code_match:
+                            product_code = code_match.group(1)
+                            break
+
+                    else:
+                        for j in range(i + 1, min(i + 4, len(lines))):
+                            code_match = re.search(r'(\d{2}-\d{3}-\d{3}-\d{3})', lines[j])
+                            if code_match:
+                                product_code = code_match.group(1)
+                                break   
+                
+                print(f"  Found: {product_code} | Annexe: {annexe_pr}")
 
                 items.append(LineItem(
                     product_code=product_code,
                     annexe_pr=annexe_pr,
-                    description=description,
+                    description="",
                     quantity=1
                 ))
+        
+        else:
+            in_order_section = False
+
+            for i, line in enumerate(lines):
+                if target_po in line:
+                    in_order_section = True
+                    print(f" Found target PO {target_po} at line {i}")
+                    continue
+
+                if in_order_section:
+                    if re.match(r'^V-\d+', line) and target_po not in line:
+                        print(f" Reached next order at line {i}, stopping")
+                        break
+                    if "Tag Client" in line or "Sous-Total" in line or 'TOTAL' in line:
+                        print(f" Reached end of items at line {i}")
+                        break
+
+                if not in_order_section:
+                    continue
+
+                line = line.strip()
+
+                match = re.search(r'V-\d+\s+[\d\.]+\s+\d+\s+([\d\-]+)\s+(.+?)(?:\d{4}-\d{2}-\d{2}|$)', line)
+                if match:
+                    product_code = match.group(1).strip()
+                    description = match.group(2).strip()
+
+                    annexe_pr = ""
+                    for j in range(i+1, min(i+6, len(lines))):
+                        annexe_match = re.search(r'Annexe PR:\s*([\d\-]+)', lines[j])
+                        if annexe_match:
+                            annexe_pr = annexe_match.group(1)
+                            break
+
+                    print(f" Found item: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
+
+                    items.append(LineItem(
+                        product_code=product_code,
+                        annexe_pr=annexe_pr,
+                        description=description,
+                        quantity=1
+                    ))
 
         print(f"DEBUG: Total items extracted: {len(items)}\n")
         return items
@@ -452,7 +574,7 @@ class DocumentMatcherGUI:
         for line in lines:
             line = line.strip()
 
-            match = re.match(r'^(\d{2}-\d{3}-\d{3}-\d{3}(?:-\w+)?)\s+(\d+)\s+([\d\-]+)\s+(.+)$', line)
+            match = re.match(r'^(\d{2}-\d{3}-\d{3}-\w+)\s+(\d+)\s+([\d\-]+)\s+(.+)$', line)
 
             if match: 
                 product_code = match.group(1).strip()
@@ -474,40 +596,92 @@ class DocumentMatcherGUI:
 
     def parse_slab_novatech_confirmation(self, text: str, target_po: str) -> List[LineItem]:
         items = []
-        lines = text.split('\n')
+        lines = [l.strip() for l in text.split('\n')]
 
         print(f"\nDEBUG: Parsing Novatech SLAB confirmation... (Filtering for PO: {target_po})")
 
-        for i, line in enumerate(lines):
-            line = line.strip()
+        is_ocr_format = any(re.search(r'Annexe PR:', l) for l in lines)
+        print(f"DEBUG: Confirmation format: {'OCR/Scanned' if is_ocr_format else 'Text-based'}")
 
-            if target_po not in line:
-                continue
+        if is_ocr_format:
+            for i, line in enumerate(lines):
+                annexe_match = re.search(r'Annexe PR:\s*([\d\-]+)', line)
+                if not annexe_match:
+                    continue
 
-            match = re.search(r'V-\d+\s+[\d\.]+\s+\d+\s+([\d\-]+)\s+(.+?)(?:\d{4}-\d{2}-\d{2}|$)', line)
-
-            if match:
-                product_code = match.group(1).strip()
-                description = match.group(2).strip()
-
-                annexe_pr = ""
-                for j in range(i+1, min(i+11, len(lines))):
-                    annexe_match = re.search(r'Annexe PR:\s*([\d\-]+)', lines[j])
-                    if annexe_match:
-                        annexe_pr = annexe_match.group(1)
-                        break
+                annexe_pr = annexe_match.group(1).split()
+                product_code = ""
                 
-                print(f" Found: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
+                for j in range(i - 1, max(i - 6, -1), -1):
+                    code_match = re.search(r'(\d{2}-\d{3}-\d{3}-\d{3})', lines[j])
+                    if code_match:
+                        product_code = code_match.group(1)
+                        break
+                else:
+                    for j in range(i + 1, min(i + 4, len(lines))):
+                        code_match = re.search(r'(\d{2}-\d{3}-\d{3}-\d{3})', lines[j])
+                        if code_match:
+                            product_code = code_match.group(1)
+                            break
+
+                if not product_code:
+                    print(f"  WARNING: annexe {annexe_pr} found but no product code nearby")
+                    continue
+
+                print(f"  Found: {product_code} | Annexe: {annexe_pr}")
 
                 items.append(LineItem(
                     product_code=product_code,
                     annexe_pr=annexe_pr,
-                    description=description,
+                    description="",
                     quantity=1
                 ))
 
-        print(f"DEBUG: Total items extracted: {len(items)}\n")
-        return items
+        else:
+            in_order_section = False
+
+            for i, line in enumerate(lines):
+                if target_po in line:
+                    in_order_section = True
+                    print(f" Found target PO {target_po} at line {i}")
+                    continue
+
+                if in_order_section:
+                    if re.match(r'^V-\d+', line) and target_po not in line:
+                        print(f" Reached next order at line {i}, stopping")
+                        break
+                    if 'Tag Client' in line or 'Sous-Total' in line or 'TOTAL' in line:
+                        print(f" Reached end of items at line {i}")
+                        break
+
+                if not in_order_section:
+                    continue
+
+                line = line.strip()
+
+                match = re.search(r'V-\d+\s+[\d\.]+\s+\d+\s+([\d\-]+)\s+(.+?)(?:\d{4}-\d{2}-\d{2}|$)', line)
+                if match:
+                    product_code = match.group(1).strip()
+                    description = match.group(2).strip()
+
+                    annexe_pr = ""
+                    for j in range(i+1, min(i+11, len(lines))):
+                        annexe_match = re.search(r'Annexe PR:\s*([\d\-]+)', lines[j])
+                        if annexe_match:
+                            annexe_pr = annexe_match.group(1)
+                            break
+                    
+                    print(f" Found: {product_code} | Annexe: {annexe_pr} | DESC: {description[:50]}")
+
+                    items.append(LineItem(
+                        product_code=product_code,
+                        annexe_pr=annexe_pr,
+                        description=description,
+                        quantity=1
+                    ))
+
+            print(f"DEBUG: Total items extracted: {len(items)}\n")
+            return items
 
     def find_price_in_catalog(self, product_code: str, pdf_path: str) -> float:
         try:
@@ -716,13 +890,15 @@ class DocumentMatcherGUI:
 
 
     def parse_document(self, pdf_path: str, doc_type: str = None) -> OrderDocument:
-        
+   
         text = self.extract_pdf_text(pdf_path)
 
         print(f"\nDEBUG: Text preview (first 500 chars):\n{text[:500]}\n")
 
         if not doc_type:
-            if "Commande de vitraux" in text or "Fournisseur :" in text:
+            if ("Commande de vitraux" in text or "Fournisseur :" in text
+                    or "Decorative lites order" in text
+                    or "Supplier : NOVATECH" in text):
                 doc_type = "DALMEN"
             elif "GROUPE NOVATECH" in text or "Novatech" in text:
                 doc_type = "NOVATECH"
@@ -782,6 +958,15 @@ class DocumentMatcherGUI:
         return SequenceMatcher(None, str1.lower(), str2.lower()).ratio()
     
     def match_documents(self, doc1: OrderDocument, doc2: OrderDocument) -> Dict:
+        if doc1.line_items is None:
+            doc1.line_items = []
+        if doc2.line_items is None:
+            doc2.line_items = []
+
+        print("DEBUG: Doc2 items check:")
+        for item in doc2.line_items:
+            print(f"  product_code='{item.product_code}' | annexe_pr='{item.annexe_pr}'")
+
         log = []
 
         order_match = doc1.order_number == doc2.order_number
@@ -993,6 +1178,7 @@ class DocumentMatcherGUI:
             "order_match": order_match,
             "price_check_ok": len(price_issues) == 0 if (is_glazing or is_slab) and is_facture else None,
         }
+
     # ── UI DISPLAY ────────────────────────────────────────────────────────────
 
     def display_result(self, result):
